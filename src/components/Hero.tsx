@@ -32,6 +32,7 @@ export const Hero: React.FC = () => {
             className="text-center"
             as="h1"
             ariaLabel="J MOON NUMEROLOGY"
+            revealMode="immediate"
           />
         </div>
       </div>

@@ -13,17 +13,9 @@ export const LegalNotice: React.FC = () => {
   return (
     <footer
       id="nota-prawna"
-      className="relative z-20 w-full py-20 sm:py-24 lg:py-28 px-4 sm:px-6 lg:px-8"
+      className="relative z-20 w-full py-16 sm:py-20 lg:py-24 px-4 sm:px-6 lg:px-8"
       aria-label="Nota prawna"
     >
-      {/* Structural Divider: Ultra-thin copper/terracotta hairline */}
-      <div
-        className="w-full max-w-[min(calc(100%-24px),1440px)] sm:max-w-[min(calc(100%-48px),1440px)] lg:max-w-[min(calc(100%-64px),1440px)] mx-auto mb-12 sm:mb-16"
-        aria-hidden="true"
-      >
-        <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-[#D17A52]/25 to-transparent" />
-      </div>
-
       {/* Discreet, Elegant Legal Colophon */}
       <div
         id="legal-notice-container"

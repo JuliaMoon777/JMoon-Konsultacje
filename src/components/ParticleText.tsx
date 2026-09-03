@@ -3,6 +3,7 @@ import { ParticleTextInstance, particleTextManager, ParticleTextOptions } from '
 
 export interface ParticleTextProps extends ParticleTextOptions {
   as?: 'h1' | 'h2' | 'h3' | 'span' | 'div';
+  revealTriggered?: boolean;
 }
 
 export const ParticleText: React.FC<ParticleTextProps> = ({
@@ -22,6 +23,12 @@ export const ParticleText: React.FC<ParticleTextProps> = ({
   id,
   as = 'div',
   ariaLabel,
+  isPrice,
+  variant,
+  revealMode,
+  revealDelay,
+  revealTriggered,
+  onAssemblyComplete,
 }) => {
   const containerRef = useRef<HTMLElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -31,6 +38,12 @@ export const ParticleText: React.FC<ParticleTextProps> = ({
     width: 0,
     height: 0,
   });
+
+  useEffect(() => {
+    if (revealTriggered && instanceRef.current) {
+      instanceRef.current.triggerReveal(false);
+    }
+  }, [revealTriggered]);
 
   // Handle ResizeObserver & Available Width detection
   useEffect(() => {
@@ -65,6 +78,11 @@ export const ParticleText: React.FC<ParticleTextProps> = ({
           particleSize,
           autoWrap,
           id,
+          isPrice,
+          variant,
+          revealMode,
+          revealDelay,
+          onAssemblyComplete,
         },
         handleLayoutChange
       );
@@ -129,6 +147,10 @@ export const ParticleText: React.FC<ParticleTextProps> = ({
     particleSize,
     autoWrap,
     id,
+    isPrice,
+    variant,
+    revealMode,
+    revealDelay,
   ]);
 
   const accessibleText = ariaLabel || (lines ? lines.join(' ') : text);

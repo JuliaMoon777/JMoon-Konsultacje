@@ -20,17 +20,9 @@ export const Footer: React.FC = () => {
   return (
     <footer
       id="site-footer"
-      className="relative z-20 w-full pt-16 sm:pt-20 lg:pt-24 pb-12 sm:pb-16 px-4 sm:px-6 lg:px-8"
+      className="relative z-20 w-full pt-12 sm:pt-16 lg:pt-20 pb-12 sm:pb-16 px-4 sm:px-6 lg:px-8"
       aria-label="Stopka strony"
     >
-      {/* Structural Divider: Ultra-thin copper/terracotta hairline */}
-      <div
-        className="w-full max-w-[min(calc(100%-24px),1440px)] sm:max-w-[min(calc(100%-48px),1440px)] lg:max-w-[min(calc(100%-64px),1440px)] mx-auto mb-14 sm:mb-18 lg:mb-20"
-        aria-hidden="true"
-      >
-        <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-[#D17A52]/25 to-transparent" />
-      </div>
-
       <div
         id="footer-content-container"
         className="w-full max-w-[min(calc(100%-24px),1440px)] sm:max-w-[min(calc(100%-48px),1440px)] lg:max-w-[min(calc(100%-64px),1440px)] mx-auto"
@@ -123,7 +115,7 @@ export const Footer: React.FC = () => {
         </div>
 
         {/* Bottom Bar: Copyright & Subtle Micro-Separator */}
-        <div className="mt-14 sm:mt-18 pt-6 sm:pt-8 border-t border-[#D17A52]/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-[11px] sm:text-xs text-[#CFBFB6]/45 font-light tracking-wide">
+        <div className="mt-12 sm:mt-16 pt-6 sm:pt-7 border-t border-[#E6B491]/[0.08] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-[11px] sm:text-xs text-[#CFBFB6]/45 font-light tracking-wide">
           <p>© 2026 JMoon Numerology. Wszelkie prawa zastrzeżone.</p>
         </div>
       </div>

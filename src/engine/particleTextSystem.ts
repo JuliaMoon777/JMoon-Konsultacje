@@ -1,16 +1,21 @@
 // ============================================================================
-// LUXURY IRIDESCENT METALLIC PARTICULATE TYPOGRAPHY ENGINE
-// Authentic microscopic metallic dust physics & rendering with Smart Auto-Wrapping
-// - Smart responsive wrapping and auto-fitting for mobile, tablet, and desktop
-// - Microscopic round particles (0.7 - 1.4px diameter)
-// - Organic sub-pixel jitter distribution (zero grid, zero dot-matrix, zero LED)
-// - Iridescent luxury metallic palette: champagne, copper, rose-gold, diamond glints & subtle sheen
-// - Gentle resting micro-drift (0.3 - 0.75px natural organic shimmer in state of rest)
-// - Physical cursor touch: only particles physically crossed by cursor receive velocity
-// - Free inertia motion -> gentle velocity decay (0.958 - 0.965)
-// - Calm, linear/damped convergence back to resting target in 1.5 - 2.5 seconds (NO springs, NO bounce)
-// - Generous unclipped canvas bounds with zero horizontal scroll on mobile
-// - Ultra-high performance batch 2D canvas rendering with IntersectionObserver pausing
+// LUXURY FLOATING DUST TYPOGRAPHY ENGINE (SCROLL-DRIVEN REVEAL & ASSEMBLY)
+// Authentic microscopic metallic dust typography built from the EXACT master material
+// of the floating background dust particles:
+// - Master palette: muted copper (#C8754F), soft copper/terracotta (#D98C63),
+//   warm champagne (#E6B089), warm ivory (#F0CEAF), deep terracotta (#B76548), dusty rose (#DC8F85).
+// - Scroll-Driven Particle Reveal & Natural Organic Assembly:
+//   * Phase 0 (Dormant): Dispersed floating dust field (anisotropic, non-circular)
+//   * Phase 1 (Awakening): 0–20% subtle directional bias and drift
+//   * Phase 2 (Attraction): 20–60% individual curved flight arcs (smoothstep)
+//   * Phase 3 (Glyph Emergence): 60–85% micro-structural particles lock first, then medium, then jewelry
+//   * Phase 4 (Settling & Lock): 85–100% gentle damped overshoot settling into exact font glyphs
+//   * Phase 5 (Idle): High-resolution stable text, micro-drift, and cursor interaction
+// - High-Resolution Typographic Architecture:
+//   * 78% micro structural particles (0.6–1.2px diameter) -> crisp typography & high contrast
+//   * 18% medium luster particles (1.2–1.8px diameter) -> depth & metallic body
+//   * 4% rare bright accent particles (1.8–2.6px diameter with delicate micro-halo) -> jewelry & light
+// - Exact font glyph raster mask fidelity for vertical stems, horizontal bars, curves & inner counters
 // ============================================================================
 
 export interface ParticleTextOptions {
@@ -29,24 +34,29 @@ export interface ParticleTextOptions {
   className?: string;
   id?: string;
   ariaLabel?: string;
+  isPrice?: boolean;
+  variant?: 'heading' | 'price' | 'subheading';
+  revealMode?: 'scroll' | 'immediate' | 'manual' | 'dormant';
+  revealDelay?: number;
+  revealTriggered?: boolean;
+  onAssemblyComplete?: () => void;
 }
 
-// Iridescent luxury metallic palette: champagne, copper, dusty rose-gold, diamond glints + delicate mist
-const LUXURY_METALLIC_PALETTE = [
-  '#F6E3D3', // 0: luminous champagne gold
-  '#EBB890', // 1: warm radiant champagne
-  '#DFC1A8', // 2: satin antique gold
-  '#E39B72', // 3: warm rose copper
-  '#D27B53', // 4: burnished terracotta copper
-  '#B85F43', // 5: deep rich copper
-  '#E89C90', // 6: dusty rose-gold
-  '#F3CDD2', // 7: soft petal rose
-  '#D97F72', // 8: deep rose copper
-  '#FFF9F2', // 9: specular diamond glint
-  '#FFEFEA', // 10: specular warm ivory
-  '#8FD5C4', // 11: iridescent pale seafoam / emerald sheen
-  '#A4BAE9', // 12: iridescent soft celestial azure
-  '#D5A5E8', // 13: iridescent delicate violet mist
+export interface MasterDustColor {
+  hex: string;
+  r: number;
+  g: number;
+  b: number;
+}
+
+// Master Background Dust Palette (100% matched to LuxuryBackground)
+export const MASTER_DUST_PALETTE: MasterDustColor[] = [
+  { hex: '#C8754F', r: 200, g: 117, b: 79 },  // 0: muted copper
+  { hex: '#D98C63', r: 217, g: 140, b: 99 },  // 1: soft copper / warm terracotta
+  { hex: '#E6B089', r: 230, g: 176, b: 137 }, // 2: warm champagne
+  { hex: '#F0CEAF', r: 240, g: 206, b: 175 }, // 3: warm ivory
+  { hex: '#B76548', r: 183, g: 101, b: 72 },  // 4: deep terracotta
+  { hex: '#DC8F85', r: 220, g: 143, b: 133 }, // 5: dusty rose
 ];
 
 export interface TextLayoutResult {
@@ -62,87 +72,67 @@ export interface TextLayoutResult {
  * Calculates optimal line breaks and balanced font sizing so text never overflows.
  */
 export function computeSmartTextLayout(
-  rawText: string,
-  explicitLines: string[] | undefined,
-  targetFontSize: number,
-  minFontSize: number,
-  letterSpacing: number,
-  lineHeightRatio: number,
-  fontWeight: number | string,
-  availableWidth: number,
+  text: string,
+  explicitLines?: string[],
+  requestedFontSize: number = 54,
+  minFontSize: number = 24,
+  letterSpacingRatio: number = 0.22,
+  lineHeightRatio: number = 1.22,
+  fontWeight: number | string = 600,
+  containerWidth: number = 1200,
   autoWrap: boolean = true
 ): TextLayoutResult {
-  const scratch = typeof document !== 'undefined' ? document.createElement('canvas') : null;
-  const ctx = scratch ? scratch.getContext('2d') : null;
+  if (typeof document === 'undefined') {
+    return {
+      lines: explicitLines || [text],
+      fontSize: requestedFontSize,
+      lineHeightPx: Math.round(requestedFontSize * lineHeightRatio),
+      visualWidth: 600,
+      visualHeight: Math.round(requestedFontSize * lineHeightRatio),
+    };
+  }
 
-  const measureLineWidth = (str: string, size: number): number => {
-    if (!ctx) return str.length * size * 0.65;
-    ctx.font = `${fontWeight} ${size}px Montserrat, Inter, -apple-system, sans-serif`;
-    const baseW = ctx.measureText(str).width;
-    const spacingExtra = Math.max(0, (str.length - 1) * (size * letterSpacing));
-    return baseW + spacingExtra;
-  };
+  const measurer = document.createElement('canvas');
+  const mCtx = measurer.getContext('2d');
+  if (!mCtx) {
+    return {
+      lines: explicitLines || [text],
+      fontSize: requestedFontSize,
+      lineHeightPx: Math.round(requestedFontSize * lineHeightRatio),
+      visualWidth: 600,
+      visualHeight: Math.round(requestedFontSize * lineHeightRatio),
+    };
+  }
 
-  // Keep a safe width margin so glyphs never clip or hug the screen borders
-  const safeWidth = Math.max(140, availableWidth);
-
-  const getMaxWidth = (candidateLines: string[], size: number): number => {
-    let maxW = 0;
-    for (const l of candidateLines) {
-      const w = measureLineWidth(l, size);
-      if (w > maxW) maxW = w;
+  const measureTextAtSize = (str: string, size: number): number => {
+    mCtx.font = `${fontWeight} ${size}px Montserrat, "Playfair Display", Inter, -apple-system, sans-serif`;
+    const charSpacing = size * letterSpacingRatio;
+    let totalW = 0;
+    for (let i = 0; i < str.length; i++) {
+      totalW += mCtx.measureText(str[i]).width + (i < str.length - 1 ? charSpacing : 0);
     }
-    return maxW;
+    return totalW;
   };
 
-  const findOptimalFontSize = (
-    candidateLines: string[],
-    maxAllowedSize: number = targetFontSize
-  ): { fontSize: number; maxWidth: number } => {
-    const maxWAtTarget = getMaxWidth(candidateLines, maxAllowedSize);
-    if (maxWAtTarget <= safeWidth) {
-      return { fontSize: maxAllowedSize, maxWidth: maxWAtTarget };
-    }
-    const scaleRatio = safeWidth / Math.max(1, maxWAtTarget);
-    const calculatedSize = Math.max(minFontSize, Math.floor(maxAllowedSize * scaleRatio));
-    const finalMaxW = getMaxWidth(candidateLines, calculatedSize);
-    return { fontSize: calculatedSize, maxWidth: finalMaxW };
-  };
+  const maxAllowedWidth = Math.max(260, containerWidth - 16);
 
-  // 1. Explicit lines provided by user
+  // If explicit lines were provided by the caller
   if (explicitLines && explicitLines.length > 0) {
-    const { fontSize, maxWidth } = findOptimalFontSize(explicitLines);
-
-    // If even at minFontSize one line still overflows, split it if autoWrap is active
-    if (autoWrap && maxWidth > safeWidth && fontSize <= minFontSize) {
-      const brokenLines: string[] = [];
+    let fontSize = requestedFontSize;
+    while (fontSize > minFontSize) {
+      let longestLineW = 0;
       for (const line of explicitLines) {
-        const words = line.trim().split(/\s+/);
-        if (words.length <= 1) {
-          brokenLines.push(line);
-        } else {
-          let current = words[0];
-          for (let i = 1; i < words.length; i++) {
-            const testLine = `${current} ${words[i]}`;
-            if (measureLineWidth(testLine, minFontSize) <= safeWidth) {
-              current = testLine;
-            } else {
-              brokenLines.push(current);
-              current = words[i];
-            }
-          }
-          brokenLines.push(current);
-        }
+        const w = measureTextAtSize(line, fontSize);
+        if (w > longestLineW) longestLineW = w;
       }
-      const rechecked = findOptimalFontSize(brokenLines);
-      const lineHeightPx = Math.round(rechecked.fontSize * lineHeightRatio);
-      return {
-        lines: brokenLines,
-        fontSize: rechecked.fontSize,
-        lineHeightPx,
-        visualWidth: Math.ceil(rechecked.maxWidth),
-        visualHeight: Math.ceil(brokenLines.length * lineHeightPx),
-      };
+      if (longestLineW <= maxAllowedWidth) break;
+      fontSize -= 1;
+    }
+
+    let visualWidth = 0;
+    for (const line of explicitLines) {
+      const w = measureTextAtSize(line, fontSize);
+      if (w > visualWidth) visualWidth = w;
     }
 
     const lineHeightPx = Math.round(fontSize * lineHeightRatio);
@@ -150,118 +140,136 @@ export function computeSmartTextLayout(
       lines: explicitLines,
       fontSize,
       lineHeightPx,
-      visualWidth: Math.ceil(maxWidth),
+      visualWidth: Math.ceil(visualWidth),
       visualHeight: Math.ceil(explicitLines.length * lineHeightPx),
     };
   }
 
-  // 2. Single string input
-  const normalizedText = rawText.trim();
-  const words = normalizedText.split(/\s+/);
+  const cleanText = text.trim();
+  const words = cleanText.split(/\s+/);
 
-  if (words.length <= 1 || !autoWrap) {
-    const { fontSize, maxWidth } = findOptimalFontSize([normalizedText]);
-    const lineHeightPx = Math.round(fontSize * lineHeightRatio);
-    return {
-      lines: [normalizedText],
-      fontSize,
-      lineHeightPx,
-      visualWidth: Math.ceil(maxWidth),
-      visualHeight: Math.ceil(lineHeightPx),
-    };
-  }
-
-  // Check if single line fits at target font size
-  const singleLineWidthAtTarget = measureLineWidth(normalizedText, targetFontSize);
-  if (singleLineWidthAtTarget <= safeWidth) {
-    const lineHeightPx = Math.round(targetFontSize * lineHeightRatio);
-    return {
-      lines: [normalizedText],
-      fontSize: targetFontSize,
-      lineHeightPx,
-      visualWidth: Math.ceil(singleLineWidthAtTarget),
-      visualHeight: Math.ceil(lineHeightPx),
-    };
-  }
-
-  // Single line with modest font reduction if clean & short
-  const singleLineScaleRatio = safeWidth / Math.max(1, singleLineWidthAtTarget);
-  const singleLineScaledSize = Math.floor(targetFontSize * singleLineScaleRatio);
-  const singleLineAcceptable =
-    singleLineScaledSize >= Math.max(34, Math.floor(targetFontSize * 0.72)) && words.length <= 2;
-
-  if (singleLineAcceptable) {
-    const w = measureLineWidth(normalizedText, singleLineScaledSize);
-    const lineHeightPx = Math.round(singleLineScaledSize * lineHeightRatio);
-    return {
-      lines: [normalizedText],
-      fontSize: singleLineScaledSize,
-      lineHeightPx,
-      visualWidth: Math.ceil(w),
-      visualHeight: Math.ceil(lineHeightPx),
-    };
-  }
-
-  // Smart Multi-line Partitioning
-  if (words.length === 2) {
-    const candidateLines = [words[0], words[1]];
-    const { fontSize, maxWidth } = findOptimalFontSize(candidateLines);
-    const lineHeightPx = Math.round(fontSize * lineHeightRatio);
-    return {
-      lines: candidateLines,
-      fontSize,
-      lineHeightPx,
-      visualWidth: Math.ceil(maxWidth),
-      visualHeight: Math.ceil(candidateLines.length * lineHeightPx),
-    };
-  }
-
-  // 3+ words: evaluate balanced 2-line splits
-  let best2LineSplit: string[] | null = null;
-  let best2LineScore = Infinity;
-
-  for (let splitIdx = 1; splitIdx < words.length; splitIdx++) {
-    const line1 = words.slice(0, splitIdx).join(' ');
-    const line2 = words.slice(splitIdx).join(' ');
-    const w1 = measureLineWidth(line1, targetFontSize);
-    const w2 = measureLineWidth(line2, targetFontSize);
-    const diff = Math.abs(w1 - w2);
-    if (diff < best2LineScore) {
-      best2LineScore = diff;
-      best2LineSplit = [line1, line2];
+  // Single word handling
+  if (words.length <= 1) {
+    let fontSize = requestedFontSize;
+    while (fontSize > minFontSize) {
+      const w = measureTextAtSize(cleanText, fontSize);
+      if (w <= maxAllowedWidth) break;
+      fontSize -= 1;
     }
+    const visualWidth = measureTextAtSize(cleanText, fontSize);
+    const lineHeightPx = Math.round(fontSize * lineHeightRatio);
+    return {
+      lines: [cleanText],
+      fontSize,
+      lineHeightPx,
+      visualWidth: Math.ceil(visualWidth),
+      visualHeight: lineHeightPx,
+    };
   }
 
-  if (best2LineSplit) {
-    const { fontSize, maxWidth } = findOptimalFontSize(best2LineSplit);
-    if (fontSize >= minFontSize + 4 || maxWidth <= safeWidth) {
+  // 1. Try single-line if autoWrap is false or text fits
+  const singleLineW = measureTextAtSize(cleanText, requestedFontSize);
+  if (!autoWrap || singleLineW <= maxAllowedWidth) {
+    let fontSize = requestedFontSize;
+    while (fontSize > minFontSize && measureTextAtSize(cleanText, fontSize) > maxAllowedWidth) {
+      fontSize -= 1;
+    }
+    const finalW = measureTextAtSize(cleanText, fontSize);
+    const lineHeightPx = Math.round(fontSize * lineHeightRatio);
+    return {
+      lines: [cleanText],
+      fontSize,
+      lineHeightPx,
+      visualWidth: Math.ceil(finalW),
+      visualHeight: lineHeightPx,
+    };
+  }
+
+  // 2. Try balanced 2-line break
+  if (words.length >= 2) {
+    let bestSplitIndex = 1;
+    let minDiff = Infinity;
+
+    for (let i = 1; i < words.length; i++) {
+      const line1 = words.slice(0, i).join(' ');
+      const line2 = words.slice(i).join(' ');
+      const w1 = measureTextAtSize(line1, requestedFontSize);
+      const w2 = measureTextAtSize(line2, requestedFontSize);
+      const diff = Math.abs(w1 - w2);
+      if (diff < minDiff) {
+        minDiff = diff;
+        bestSplitIndex = i;
+      }
+    }
+
+    const twoLines = [
+      words.slice(0, bestSplitIndex).join(' '),
+      words.slice(bestSplitIndex).join(' '),
+    ];
+
+    let fontSize = requestedFontSize;
+    while (fontSize > minFontSize) {
+      const w1 = measureTextAtSize(twoLines[0], fontSize);
+      const w2 = measureTextAtSize(twoLines[1], fontSize);
+      if (Math.max(w1, w2) <= maxAllowedWidth) break;
+      fontSize -= 1;
+    }
+
+    const w1 = measureTextAtSize(twoLines[0], fontSize);
+    const w2 = measureTextAtSize(twoLines[1], fontSize);
+    const maxTwoLineW = Math.max(w1, w2);
+
+    if (fontSize >= minFontSize + 4 || maxAllowedWidth < 450) {
       const lineHeightPx = Math.round(fontSize * lineHeightRatio);
       return {
-        lines: best2LineSplit,
+        lines: twoLines,
         fontSize,
         lineHeightPx,
-        visualWidth: Math.ceil(maxWidth),
-        visualHeight: Math.ceil(best2LineSplit.length * lineHeightPx),
+        visualWidth: Math.ceil(maxTwoLineW),
+        visualHeight: Math.ceil(2 * lineHeightPx),
       };
     }
   }
 
-  // Multi-line greedy wrap
-  const greedyLines: string[] = [];
-  let currentLine = words[0];
+  // 3. Greedy multi-line wrapping fallback
+  let fontSize = requestedFontSize;
+  let greedyLines: string[] = [];
+  let maxWidth = 0;
 
-  for (let i = 1; i < words.length; i++) {
-    const testLine = `${currentLine} ${words[i]}`;
-    if (measureLineWidth(testLine, Math.max(minFontSize, targetFontSize * 0.75)) <= safeWidth) {
-      currentLine = testLine;
-    } else {
-      greedyLines.push(currentLine);
-      currentLine = words[i];
+  const tryGreedyWrap = (size: number): { lines: string[]; maxW: number } => {
+    const result: string[] = [];
+    let currentLine = words[0];
+    let maxW = 0;
+
+    for (let i = 1; i < words.length; i++) {
+      const testLine = `${currentLine} ${words[i]}`;
+      const testW = measureTextAtSize(testLine, size);
+      if (testW <= maxAllowedWidth) {
+        currentLine = testLine;
+      } else {
+        const curW = measureTextAtSize(currentLine, size);
+        if (curW > maxW) maxW = curW;
+        result.push(currentLine);
+        currentLine = words[i];
+      }
     }
-  }
-  greedyLines.push(currentLine);
+    const curW = measureTextAtSize(currentLine, size);
+    if (curW > maxW) maxW = curW;
+    result.push(currentLine);
 
-  const { fontSize, maxWidth } = findOptimalFontSize(greedyLines);
+    return { lines: result, maxW };
+  };
+
+  while (fontSize >= minFontSize) {
+    const wrap = tryGreedyWrap(fontSize);
+    if (wrap.maxW <= maxAllowedWidth || fontSize === minFontSize) {
+      greedyLines = wrap.lines;
+      maxWidth = wrap.maxW;
+      break;
+    }
+    fontSize -= 1;
+  }
+
   const lineHeightPx = Math.round(fontSize * lineHeightRatio);
   return {
     lines: greedyLines,
@@ -271,6 +279,9 @@ export function computeSmartTextLayout(
     visualHeight: Math.ceil(greedyLines.length * lineHeightPx),
   };
 }
+
+// Session store to remember assembled instances across soft navigation/resizes
+const ASSEMBLED_SESSION_KEYS = new Set<string>();
 
 export class ParticleTextInstance {
   public canvas: HTMLCanvasElement;
@@ -286,7 +297,7 @@ export class ParticleTextInstance {
   public computedLines: string[] = [];
   public computedFontSize: number = 0;
 
-  // Particle buffers
+  // Master Material Particle Buffers
   private count: number = 0;
   private px: Float32Array = new Float32Array(0);
   private py: Float32Array = new Float32Array(0);
@@ -295,10 +306,23 @@ export class ParticleTextInstance {
   private vx: Float32Array = new Float32Array(0);
   private vy: Float32Array = new Float32Array(0);
   private radius: Float32Array = new Float32Array(0);
-  private timeSinceTouch: Float32Array = new Float32Array(0);
-  private isDisturbed: Uint8Array = new Uint8Array(0);
+  private depthTier: Uint8Array = new Uint8Array(0); // 0 = MICRO STRUCTURAL (FAR), 1 = MEDIUM BODY (MID), 2 = ACCENT JEWELRY (NEAR)
+  private colorIdx: Uint8Array = new Uint8Array(0);
+  private baseAlpha: Float32Array = new Float32Array(0);
+  private currentAlpha: Float32Array = new Float32Array(0);
 
-  // Micro-drift buffers
+  // Halos for rare accent & glint particles
+  private hasHalo: Uint8Array = new Uint8Array(0);
+  private haloRadius: Float32Array = new Float32Array(0);
+  private haloAlpha: Float32Array = new Float32Array(0);
+
+  // Micro-shimmer buffers (calm, uncoordinated metallic reflection on jewelry accents)
+  private isShimmering: Uint8Array = new Uint8Array(0);
+  private shimmerPhase: Float32Array = new Float32Array(0);
+  private shimmerSpeed: Float32Array = new Float32Array(0);
+  private shimmerBoost: Float32Array = new Float32Array(0);
+
+  // Micro-drift buffers (0.15–0.40px organic oscillation)
   private phaseX: Float32Array = new Float32Array(0);
   private phaseY: Float32Array = new Float32Array(0);
   private freqX: Float32Array = new Float32Array(0);
@@ -306,8 +330,33 @@ export class ParticleTextInstance {
   private ampX: Float32Array = new Float32Array(0);
   private ampY: Float32Array = new Float32Array(0);
 
-  // Grouped by color index for batch rendering
-  private colorGroups: number[][] = [];
+  // Interaction buffers
+  private timeSinceTouch: Float32Array = new Float32Array(0);
+  private isDisturbed: Uint8Array = new Uint8Array(0);
+
+  // SCROLL-DRIVEN REVEAL & ASSEMBLY BUFFERS
+  public assemblyState: 'DORMANT' | 'PREPARE' | 'ASSEMBLING' | 'SETTLING' | 'IDLE' = 'DORMANT';
+  public hasAssembled: boolean = false;
+  public revealTriggered: boolean = false;
+  public assemblyProgress: number = 0; // 0 to 1
+  public assemblyElapsed: number = 0;
+  public assemblyDuration: number = 1.15; // seconds
+  public revealDelay: number = 0; // seconds
+
+  private initScatterX: Float32Array = new Float32Array(0);
+  private initScatterY: Float32Array = new Float32Array(0);
+  private scatterDist: Float32Array = new Float32Array(0);
+  private perpNormX: Float32Array = new Float32Array(0);
+  private perpNormY: Float32Array = new Float32Array(0);
+  private particleDelay: Float32Array = new Float32Array(0);
+  private arcCurvature: Float32Array = new Float32Array(0);
+  private overshootAmp: Float32Array = new Float32Array(0);
+  private trajNoisePhase: Float32Array = new Float32Array(0);
+
+  // Grouped by [colorIdx][depthTier] for ultra-fast batched canvas rendering
+  private batchGroups: number[][][] = [];
+  private haloList: number[] = [];
+  private shimmerList: number[] = [];
 
   // Pointer position tracking
   private prevPointerX: number = -99999;
@@ -319,6 +368,7 @@ export class ParticleTextInstance {
   public padX: number = 0;
   public padY: number = 0;
   private isReducedMotion: boolean = false;
+  private isPriceText: boolean = false;
 
   // Layout change callback for React synchronization
   public onLayoutChange?: (width: number, height: number) => void;
@@ -353,8 +403,17 @@ export class ParticleTextInstance {
     this.prevPointerY = e.clientY - rect.top;
   };
 
+  public getInteractionStrength(): number {
+    if (this.hasAssembled || this.assemblyState === 'IDLE') return 1.0;
+    if (this.assemblyProgress < 0.70) return 0.0;
+    return (this.assemblyProgress - 0.70) / 0.30;
+  }
+
   private onPointerMove = (e: PointerEvent) => {
     if (this.isReducedMotion) return;
+
+    const interactionStrength = this.getInteractionStrength();
+    if (interactionStrength <= 0.01) return;
 
     const rect = this.canvas.getBoundingClientRect();
     const curX = e.clientX - rect.left;
@@ -386,7 +445,7 @@ export class ParticleTextInstance {
     const perpX = -dirY;
     const perpY = dirX;
 
-    const touchRadius = 7.0;
+    const touchRadius = 8.5;
     const touchRadiusSq = touchRadius * touchRadius;
 
     const segMinX = Math.min(ax, bx) - touchRadius;
@@ -394,8 +453,8 @@ export class ParticleTextInstance {
     const segMinY = Math.min(ay, by) - touchRadius;
     const segMaxY = Math.max(ay, by) + touchRadius;
 
-    const speed = Math.min(segLen, 30);
-    const baseForce = speed * 0.24 + 1.0;
+    const speed = Math.min(segLen, 28);
+    const baseForce = (speed * 0.22 + 0.9) * interactionStrength;
 
     let touchedAny = false;
 
@@ -451,6 +510,35 @@ export class ParticleTextInstance {
     this.prevPointerY = -99999;
   };
 
+  public triggerReveal(immediate: boolean = false) {
+    if (this.hasAssembled || this.revealTriggered) return;
+
+    if (this.isReducedMotion || immediate) {
+      this.hasAssembled = true;
+      this.assemblyProgress = 1.0;
+      this.assemblyState = 'IDLE';
+      const key = this.options.id || this.options.text;
+      if (key) ASSEMBLED_SESSION_KEYS.add(key);
+      this.render();
+      return;
+    }
+
+    this.revealTriggered = true;
+    this.assemblyState = 'PREPARE';
+    this.assemblyElapsed = 0;
+    this.wakeUp();
+  }
+
+  public triggerSoftReEntry() {
+    if (!this.hasAssembled) return;
+    // Mild momentary shimmer ripple across accent particles on re-entry without destroying typography
+    for (let s = 0; s < this.shimmerList.length; s++) {
+      const i = this.shimmerList[s];
+      this.shimmerPhase[i] = Math.random() * Math.PI;
+    }
+    this.wakeUp();
+  }
+
   public wakeUp() {
     particleTextManager.wakeUp();
   }
@@ -474,7 +562,7 @@ export class ParticleTextInstance {
     const isMobile = winW < 640;
     const isTablet = winW >= 640 && winW < 1024;
 
-    // Determine available width
+    // Determine available container width
     let currentAvailableWidth = this.availableWidth;
     if (currentAvailableWidth <= 0) {
       const parentEl = this.canvas.parentElement;
@@ -485,7 +573,7 @@ export class ParticleTextInstance {
       }
     }
 
-    const baseFontSize = this.options.fontSize ?? (isMobile ? 32 : 52);
+    const baseFontSize = this.options.fontSize ?? (isMobile ? 32 : 54);
     const minFontSize = this.options.minFontSize ?? (baseFontSize >= 40 ? 24 : 18);
     const fontWeight = this.options.fontWeight ?? 600;
     const letterSpacing = this.options.letterSpacing ?? 0.22;
@@ -493,9 +581,38 @@ export class ParticleTextInstance {
     const align = this.options.align ?? 'center';
     const autoWrap = this.options.autoWrap ?? true;
 
-    this.dpr = Math.min(window.devicePixelRatio || 1, 2.0);
+    const isPrice =
+      this.options.isPrice === true ||
+      this.options.variant === 'price' ||
+      (typeof this.options.text === 'string' && this.options.text.includes('zł')) ||
+      (baseFontSize <= 36 && /\d/.test(this.options.text));
 
-    // Compute responsive layout
+    this.isPriceText = isPrice;
+
+    // Durations and timing setup
+    this.assemblyDuration = isPrice ? (isMobile ? 0.58 : 0.72) : (isMobile ? 0.95 : 1.25);
+    this.revealDelay = (this.options.revealDelay ?? (isPrice ? 320 : 0)) / 1000;
+
+    const sessionKey = this.options.id || this.options.text;
+    const alreadyAssembled = sessionKey ? ASSEMBLED_SESSION_KEYS.has(sessionKey) : false;
+
+    if (alreadyAssembled || this.isReducedMotion || this.options.revealMode === 'immediate') {
+      this.hasAssembled = true;
+      this.assemblyProgress = 1.0;
+      this.assemblyState = 'IDLE';
+    } else if (this.options.revealTriggered) {
+      this.hasAssembled = false;
+      this.revealTriggered = true;
+      this.assemblyState = 'PREPARE';
+    } else {
+      this.hasAssembled = false;
+      this.revealTriggered = false;
+      this.assemblyState = 'DORMANT';
+    }
+
+    this.dpr = Math.min(Math.max(window.devicePixelRatio || 1, 2.0), 3.0);
+
+    // Compute smart typographic layout
     const layout = computeSmartTextLayout(
       this.options.text || '',
       this.options.lines,
@@ -517,9 +634,9 @@ export class ParticleTextInstance {
       this.onLayoutChange(layout.visualWidth, layout.visualHeight);
     }
 
-    // Safety margins: Desktop 120/80, Tablet 80/55, Mobile 45/30
-    const padX = isMobile ? 45 : isTablet ? 80 : 120;
-    const padY = isMobile ? 30 : isTablet ? 55 : 80;
+    // Safety margins (generous padding for organic curved trajectories and scatter field)
+    const padX = isMobile ? (isPrice ? 45 : 70) : (isPrice ? 65 : 120);
+    const padY = isMobile ? (isPrice ? 35 : 55) : (isPrice ? 50 : 85);
 
     this.padX = padX;
     this.padY = padY;
@@ -530,18 +647,16 @@ export class ParticleTextInstance {
     this.width = totalWidth;
     this.height = totalHeight;
 
-    // Measurement canvas
+    // Measurement & Mask Scratch Canvas
     const scratch = document.createElement('canvas');
     scratch.width = totalWidth;
     scratch.height = totalHeight;
     const sCtx = scratch.getContext('2d', { willReadFrequently: true });
     if (!sCtx) return;
 
-    const fontString = `${fontWeight} ${layout.fontSize}px Montserrat, Inter, -apple-system, sans-serif`;
+    const fontString = `${fontWeight} ${layout.fontSize}px Montserrat, "Playfair Display", Inter, -apple-system, sans-serif`;
     sCtx.font = fontString;
     sCtx.fillStyle = '#FFFFFF';
-    sCtx.strokeStyle = '#FFFFFF';
-    sCtx.lineWidth = Math.max(0.7, layout.fontSize * 0.022);
     sCtx.textBaseline = 'middle';
 
     const charSpacing = layout.fontSize * letterSpacing;
@@ -567,50 +682,70 @@ export class ParticleTextInstance {
       let curX = startX;
       for (let i = 0; i < line.length; i++) {
         sCtx.fillText(line[i], curX, cy);
-        sCtx.strokeText(line[i], curX, cy);
         curX += charWidths[i] + charSpacing;
       }
     });
 
-    // Sample pixel grid
+    // Extract exact pixel mask data
     const imgData = sCtx.getImageData(0, 0, totalWidth, totalHeight);
     const pixels = imgData.data;
 
-    const solidPixels: Array<{ x: number; y: number; a: number }> = [];
-    const edgePixels: Array<{ x: number; y: number; a: number }> = [];
+    // HIGH-RESOLUTION ADAPTIVE SAMPLING
+    const step = isPrice
+      ? 0.58 // Ultra-high density for prices
+      : (isMobile ? 1.20 : 1.38);
 
-    for (let y = 1; y < totalHeight - 1; y++) {
-      const rowOffset = y * totalWidth;
-      for (let x = 1; x < totalWidth - 1; x++) {
-        const idx = (rowOffset + x) * 4;
+    const sampledPoints: Array<{ x: number; y: number; isEdge: boolean }> = [];
+
+    // Scan bounding area
+    const startX = Math.max(1, Math.floor(padX - 8));
+    const endX = Math.min(totalWidth - 2, Math.ceil(padX + layout.visualWidth + 8));
+    const startY = Math.max(1, Math.floor(padY - 8));
+    const endY = Math.min(totalHeight - 2, Math.ceil(padY + layout.visualHeight + 8));
+
+    for (let gy = startY; gy <= endY; gy += step) {
+      const yInt = Math.floor(gy);
+      const rowOffset = yInt * totalWidth;
+
+      for (let gx = startX; gx <= endX; gx += step) {
+        const xInt = Math.floor(gx);
+        const idx = (rowOffset + xInt) * 4;
         const a = pixels[idx + 3];
 
-        if (a > 28) {
-          const item = { x, y, a: a / 255 };
-          const leftA = pixels[(rowOffset + x - 1) * 4 + 3];
-          const rightA = pixels[(rowOffset + x + 1) * 4 + 3];
-          const topA = pixels[((y - 1) * totalWidth + x) * 4 + 3];
-          const botA = pixels[((y + 1) * totalWidth + x) * 4 + 3];
+        if (a > 25) {
+          const checkDist = Math.max(1, Math.round(step * 1.15));
+          const leftA = pixels[(rowOffset + Math.max(0, xInt - checkDist)) * 4 + 3] || 0;
+          const rightA = pixels[(rowOffset + Math.min(totalWidth - 1, xInt + checkDist)) * 4 + 3] || 0;
+          const topA = pixels[(Math.max(0, yInt - checkDist) * totalWidth + xInt) * 4 + 3] || 0;
+          const botA = pixels[(Math.min(totalHeight - 1, yInt + checkDist) * totalWidth + xInt) * 4 + 3] || 0;
 
-          if (leftA < 180 || rightA < 180 || topA < 180 || botA < 180) {
-            edgePixels.push(item);
+          const isEdge = leftA < 130 || rightA < 130 || topA < 130 || botA < 130;
+
+          if (isPrice) {
+            // Price: Ultra-fine precision sampling
+            sampledPoints.push({
+              x: gx + (Math.random() - 0.5) * 0.12,
+              y: gy + (Math.random() - 0.5) * 0.12,
+              isEdge,
+            });
           } else {
-            solidPixels.push(item);
+            const jitterScale = isEdge ? 0.28 : 0.48;
+            const jx = (Math.random() - 0.5) * step * jitterScale;
+            const jy = (Math.random() - 0.5) * step * jitterScale;
+
+            sampledPoints.push({
+              x: gx + jx,
+              y: gy + jy,
+              isEdge,
+            });
           }
         }
       }
     }
 
-    const allCandidatePixels = edgePixels.concat(solidPixels);
-    if (allCandidatePixels.length === 0) return;
+    if (sampledPoints.length === 0) return;
 
-    // Dynamic high-density metallic dust target
-    const targetParticleCount = Math.min(
-      22000,
-      Math.max(2800, Math.floor(allCandidatePixels.length * 0.92))
-    );
-
-    this.count = targetParticleCount;
+    this.count = sampledPoints.length;
     this.px = new Float32Array(this.count);
     this.py = new Float32Array(this.count);
     this.ox = new Float32Array(this.count);
@@ -618,8 +753,19 @@ export class ParticleTextInstance {
     this.vx = new Float32Array(this.count);
     this.vy = new Float32Array(this.count);
     this.radius = new Float32Array(this.count);
-    this.timeSinceTouch = new Float32Array(this.count);
-    this.isDisturbed = new Uint8Array(this.count);
+    this.depthTier = new Uint8Array(this.count);
+    this.colorIdx = new Uint8Array(this.count);
+    this.baseAlpha = new Float32Array(this.count);
+    this.currentAlpha = new Float32Array(this.count);
+
+    this.hasHalo = new Uint8Array(this.count);
+    this.haloRadius = new Float32Array(this.count);
+    this.haloAlpha = new Float32Array(this.count);
+
+    this.isShimmering = new Uint8Array(this.count);
+    this.shimmerPhase = new Float32Array(this.count);
+    this.shimmerSpeed = new Float32Array(this.count);
+    this.shimmerBoost = new Float32Array(this.count);
 
     this.phaseX = new Float32Array(this.count);
     this.phaseY = new Float32Array(this.count);
@@ -628,97 +774,157 @@ export class ParticleTextInstance {
     this.ampX = new Float32Array(this.count);
     this.ampY = new Float32Array(this.count);
 
-    const paletteCount = LUXURY_METALLIC_PALETTE.length;
-    this.colorGroups = Array.from({ length: paletteCount }, () => []);
+    this.timeSinceTouch = new Float32Array(this.count);
+    this.isDisturbed = new Uint8Array(this.count);
 
-    const edgeRatio = edgePixels.length > 0 ? 0.36 : 0.0;
-    const edgeCount = Math.floor(this.count * edgeRatio);
-    const fillCount = this.count - edgeCount;
+    // Assembly trajectory buffers
+    this.initScatterX = new Float32Array(this.count);
+    this.initScatterY = new Float32Array(this.count);
+    this.scatterDist = new Float32Array(this.count);
+    this.perpNormX = new Float32Array(this.count);
+    this.perpNormY = new Float32Array(this.count);
+    this.particleDelay = new Float32Array(this.count);
+    this.arcCurvature = new Float32Array(this.count);
+    this.overshootAmp = new Float32Array(this.count);
+    this.trajNoisePhase = new Float32Array(this.count);
 
-    let particleIdx = 0;
+    this.batchGroups = Array.from({ length: 6 }, () =>
+      Array.from({ length: 3 }, () => [])
+    );
+    this.haloList = [];
+    this.shimmerList = [];
 
-    const initDrift = (idx: number) => {
-      this.phaseX[idx] = Math.random() * Math.PI * 2;
-      this.phaseY[idx] = Math.random() * Math.PI * 2;
-      this.freqX[idx] = 0.4 + Math.random() * 0.5;
-      this.freqY[idx] = 0.4 + Math.random() * 0.5;
-      this.ampX[idx] = 0.35 + Math.random() * 0.40;
-      this.ampY[idx] = 0.35 + Math.random() * 0.40;
-    };
+    const centerX = padX + layout.visualWidth * 0.5;
+    const centerY = padY + layout.visualHeight * 0.5;
 
-    // 1. Edge contour particles
-    for (let i = 0; i < edgeCount; i++) {
-      const src = edgePixels[Math.floor(Math.random() * edgePixels.length)];
-      const jitterX = (Math.random() - 0.5) * 0.85;
-      const jitterY = (Math.random() - 0.5) * 0.85;
-      const posX = src.x + jitterX;
-      const posY = src.y + jitterY;
+    const microThreshold = isPrice ? 0.88 : 0.78;
+    const midThreshold = isPrice ? 0.975 : 0.96;
 
-      this.ox[particleIdx] = posX;
-      this.oy[particleIdx] = posY;
-      this.px[particleIdx] = posX;
-      this.py[particleIdx] = posY;
-      this.vx[particleIdx] = 0;
-      this.vy[particleIdx] = 0;
-      this.timeSinceTouch[particleIdx] = 999.0;
-      this.isDisturbed[particleIdx] = 0;
-      initDrift(particleIdx);
+    for (let i = 0; i < this.count; i++) {
+      const pt = sampledPoints[i];
+      this.ox[i] = pt.x;
+      this.oy[i] = pt.y;
+      this.vx[i] = 0;
+      this.vy[i] = 0;
+      this.timeSinceTouch[i] = 999.0;
+      this.isDisturbed[i] = 0;
 
-      this.radius[particleIdx] = 0.36 + Math.random() * 0.30;
+      // Micro-drift setup
+      this.phaseX[i] = Math.random() * Math.PI * 2;
+      this.phaseY[i] = Math.random() * Math.PI * 2;
+      this.freqX[i] = 0.30 + Math.random() * 0.40;
+      this.freqY[i] = 0.25 + Math.random() * 0.35;
+      this.ampX[i] = isPrice ? 0.08 + Math.random() * 0.08 : 0.15 + Math.random() * 0.22;
+      this.ampY[i] = isPrice ? 0.08 + Math.random() * 0.08 : 0.15 + Math.random() * 0.22;
 
-      const rand = Math.random();
+      const rTier = Math.random();
+      let tier = 0; // 0 = MICRO STRUCTURAL, 1 = MEDIUM BODY, 2 = ACCENT JEWELRY
+      let rad = 0.35;
+      let alpha = 0.75;
       let cIdx = 0;
-      if (rand < 0.32) cIdx = 1;      // warm champagne
-      else if (rand < 0.50) cIdx = 0; // pale champagne
-      else if (rand < 0.65) cIdx = 3; // soft copper
-      else if (rand < 0.76) cIdx = 6; // dusty rose-gold
-      else if (rand < 0.85) cIdx = 4; // radiant copper
-      else if (rand < 0.92) cIdx = 9; // diamond sparkle
-      else if (rand < 0.95) cIdx = 11;// iridescent seafoam
-      else if (rand < 0.98) cIdx = 12;// celestial azure
-      else cIdx = 13;                 // violet mist
 
-      this.colorGroups[cIdx].push(particleIdx);
-      particleIdx++;
-    }
+      if (rTier < microThreshold) {
+        tier = 0;
+        rad = isPrice ? 0.23 + Math.random() * 0.22 : 0.32 + Math.random() * 0.28;
+        alpha = isPrice ? 0.88 + Math.random() * 0.08 : 0.70 + Math.random() * 0.14;
+        const cRand = Math.random();
+        if (cRand < 0.42) cIdx = 2;
+        else if (cRand < 0.72) cIdx = 1;
+        else if (cRand < 0.88) cIdx = 0;
+        else cIdx = 3;
+      } else if (rTier < midThreshold) {
+        tier = 1;
+        rad = isPrice ? 0.46 + Math.random() * 0.24 : 0.60 + Math.random() * 0.30;
+        alpha = isPrice ? 0.92 + Math.random() * 0.06 : 0.82 + Math.random() * 0.12;
+        const cRand = Math.random();
+        if (cRand < 0.50) cIdx = 2;
+        else if (cRand < 0.80) cIdx = 1;
+        else if (cRand < 0.92) cIdx = 3;
+        else cIdx = 0;
+      } else {
+        tier = 2;
+        rad = isPrice ? 0.75 + Math.random() * 0.32 : 0.90 + Math.random() * 0.38;
+        alpha = isPrice ? 0.94 + Math.random() * 0.05 : 0.88 + Math.random() * 0.10;
+        const cRand = Math.random();
+        if (cRand < 0.65) cIdx = 2;
+        else if (cRand < 0.90) cIdx = 3;
+        else cIdx = 1;
 
-    // 2. Interior volumetric dust
-    const fillPool = solidPixels.length > 0 ? solidPixels : allCandidatePixels;
-    for (let i = 0; i < fillCount; i++) {
-      const src = fillPool[Math.floor(Math.random() * fillPool.length)];
-      const jitterX = (Math.random() - 0.5) * 0.95;
-      const jitterY = (Math.random() - 0.5) * 0.95;
-      const posX = src.x + jitterX;
-      const posY = src.y + jitterY;
+        this.hasHalo[i] = 1;
+        this.haloRadius[i] = rad * (isPrice ? 1.8 : 2.2);
+        this.haloAlpha[i] = isPrice ? 0.15 + Math.random() * 0.08 : 0.18 + Math.random() * 0.10;
+        this.haloList.push(i);
+        this.isShimmering[i] = Math.random() < 0.60 ? 1 : 0;
+      }
 
-      this.ox[particleIdx] = posX;
-      this.oy[particleIdx] = posY;
-      this.px[particleIdx] = posX;
-      this.py[particleIdx] = posY;
-      this.vx[particleIdx] = 0;
-      this.vy[particleIdx] = 0;
-      this.timeSinceTouch[particleIdx] = 999.0;
-      this.isDisturbed[particleIdx] = 0;
-      initDrift(particleIdx);
+      this.depthTier[i] = tier;
+      this.radius[i] = rad;
+      this.colorIdx[i] = cIdx;
+      this.baseAlpha[i] = alpha;
+      this.currentAlpha[i] = alpha;
 
-      this.radius[particleIdx] = 0.35 + Math.random() * 0.35;
+      if (this.isShimmering[i] === 1) {
+        this.shimmerPhase[i] = Math.random() * Math.PI * 2;
+        this.shimmerSpeed[i] = 0.80 + Math.random() * 1.4;
+        this.shimmerBoost[i] = 0.15 + Math.random() * 0.20;
+        this.shimmerList.push(i);
+      }
 
-      const rand = Math.random();
-      let cIdx = 0;
-      if (rand < 0.28) cIdx = 1;      // warm champagne
-      else if (rand < 0.44) cIdx = 0; // pale champagne
-      else if (rand < 0.58) cIdx = 3; // copper
-      else if (rand < 0.70) cIdx = 6; // dusty rose-gold
-      else if (rand < 0.78) cIdx = 2; // antique champagne
-      else if (rand < 0.85) cIdx = 7; // petal rose
-      else if (rand < 0.90) cIdx = 8; // deep rose copper
-      else if (rand < 0.94) cIdx = 9; // diamond sparkle
-      else if (rand < 0.96) cIdx = 10;// specular ivory
-      else if (rand < 0.98) cIdx = 11;// iridescent seafoam
-      else cIdx = 12;                 // celestial azure
+      this.batchGroups[cIdx][tier].push(i);
 
-      this.colorGroups[cIdx].push(particleIdx);
-      particleIdx++;
+      // =======================================================================
+      // ORGANIC ASYMMETRIC SCATTER FIELD & TRAJECTORY GENERATION
+      // Desktop: 40–180px (Price: 25–70px) | Mobile: 25–90px (Price: 18–50px)
+      // Asymmetric dispersed matter (non-circular, non-uniform, natural floating)
+      // =======================================================================
+      const angleBase = Math.atan2(pt.y - centerY, pt.x - centerX);
+      const angleVariation = (Math.sin(i * 0.41) + Math.cos(i * 0.67)) * 0.82;
+      const angle = angleBase + angleVariation + (Math.random() - 0.5) * 0.95;
+
+      const minDist = isPrice ? (isMobile ? 18 : 25) : (isMobile ? 25 : 40);
+      const maxDist = isPrice ? (isMobile ? 50 : 70) : (isMobile ? 90 : 180);
+      const distRand = Math.pow(Math.random(), 0.72);
+      const dist = minDist + distRand * (maxDist - minDist);
+
+      const scX = Math.cos(angle) * dist * 1.15;
+      const scY = Math.sin(angle) * dist * 0.85;
+
+      this.initScatterX[i] = scX;
+      this.initScatterY[i] = scY;
+      this.scatterDist[i] = Math.sqrt(scX * scX + scY * scY);
+
+      const normLen = Math.max(1, this.scatterDist[i]);
+      this.perpNormX[i] = -scY / normLen;
+      this.perpNormY[i] = scX / normLen;
+
+      const sign = Math.random() < 0.5 ? 1 : -1;
+      if (tier === 0) {
+        // Micro structural: arrives first, disciplined contour
+        this.arcCurvature[i] = sign * (0.12 + Math.random() * 0.18);
+        this.particleDelay[i] = Math.random() * 0.12; // 0–120ms
+        this.overshootAmp[i] = isPrice ? 0.02 : 0.08 + Math.random() * 0.08;
+      } else if (tier === 1) {
+        // Medium body: arrives second, graceful arc
+        this.arcCurvature[i] = sign * (0.30 + Math.random() * 0.28);
+        this.particleDelay[i] = 0.05 + Math.random() * 0.17; // 50–220ms
+        this.overshootAmp[i] = isPrice ? 0.15 : 0.32 + Math.random() * 0.30;
+      } else {
+        // Accent jewelry: arrives last, beautiful sweeping arc and light reflection
+        this.arcCurvature[i] = sign * (0.50 + Math.random() * 0.38);
+        this.particleDelay[i] = 0.12 + Math.random() * 0.23; // 120–350ms
+        this.overshootAmp[i] = isPrice ? 0.28 : 0.65 + Math.random() * 0.60;
+      }
+
+      this.trajNoisePhase[i] = Math.random() * Math.PI * 2;
+
+      // Initial positions
+      if (this.hasAssembled) {
+        this.px[i] = pt.x;
+        this.py[i] = pt.y;
+      } else {
+        this.px[i] = pt.x + scX;
+        this.py[i] = pt.y + scY;
+      }
     }
 
     // Canvas styling
@@ -737,52 +943,180 @@ export class ParticleTextInstance {
   public update(dt: number, time: number): boolean {
     if (this.isReducedMotion) return false;
 
+    // =========================================================================
+    // 1. SCROLL-DRIVEN REVEAL & ASSEMBLY STATE MACHINE
+    // DORMANT -> PREPARE -> ASSEMBLING -> SETTLING -> IDLE
+    // =========================================================================
+    if (this.revealTriggered && !this.hasAssembled) {
+      this.assemblyElapsed += dt;
+
+      if (this.assemblyElapsed >= this.revealDelay) {
+        const activeElapsed = this.assemblyElapsed - this.revealDelay;
+        const rawProgress = activeElapsed / Math.max(0.001, this.assemblyDuration);
+        this.assemblyProgress = Math.min(1.0, rawProgress);
+
+        if (rawProgress < 0.20) {
+          this.assemblyState = 'PREPARE';
+        } else if (rawProgress < 0.85) {
+          this.assemblyState = 'ASSEMBLING';
+        } else if (rawProgress < 1.35) {
+          this.assemblyState = 'SETTLING';
+        } else {
+          this.assemblyState = 'IDLE';
+          this.hasAssembled = true;
+          const sessionKey = this.options.id || this.options.text;
+          if (sessionKey) ASSEMBLED_SESSION_KEYS.add(sessionKey);
+          if (this.options.onAssemblyComplete) {
+            this.options.onAssemblyComplete();
+          }
+        }
+      }
+    }
+
+    // Update shimmering particles opacity
+    for (let s = 0; s < this.shimmerList.length; s++) {
+      const i = this.shimmerList[s];
+      const wave = Math.sin(time * this.shimmerSpeed[i] + this.shimmerPhase[i]);
+      if (wave > 0.25) {
+        const factor = Math.pow((wave - 0.25) / 0.75, 2.0);
+        this.currentAlpha[i] = Math.min(0.98, this.baseAlpha[i] + factor * this.shimmerBoost[i]);
+      } else {
+        this.currentAlpha[i] = this.baseAlpha[i];
+      }
+    }
+
+    const isDormant = this.assemblyState === 'DORMANT';
+    const isPrepare = this.assemblyState === 'PREPARE';
+    const isFullyAssembled = this.hasAssembled || this.assemblyState === 'IDLE';
+    const activeElapsed = Math.max(0, this.assemblyElapsed - this.revealDelay);
+
     for (let i = 0; i < this.count; i++) {
       const driftX = Math.sin(time * this.freqX[i] + this.phaseX[i]) * this.ampX[i];
       const driftY = Math.cos(time * this.freqY[i] + this.phaseY[i]) * this.ampY[i];
       const targetX = this.ox[i] + driftX;
       const targetY = this.oy[i] + driftY;
 
-      if (this.isDisturbed[i] === 0) {
-        this.px[i] = targetX;
-        this.py[i] = targetY;
+      // =======================================================================
+      // FINAL / IDLE STATE (EXACT APPROVED INTERACTION & IDLE PHYSICS)
+      // =======================================================================
+      if (isFullyAssembled) {
+        if (this.isDisturbed[i] === 0) {
+          this.px[i] = targetX;
+          this.py[i] = targetY;
+          continue;
+        }
+
+        this.timeSinceTouch[i] += dt;
+        const t = this.timeSinceTouch[i];
+
+        let px = this.px[i];
+        let py = this.py[i];
+        let vx = this.vx[i];
+        let vy = this.vy[i];
+
+        px += vx;
+        py += vy;
+        vx *= 0.960;
+        vy *= 0.960;
+
+        if (t > 0.05) {
+          const returnRate = Math.min(0.046, 0.025 + (t - 0.05) * 0.022);
+          px += (targetX - px) * returnRate;
+          py += (targetY - py) * returnRate;
+        }
+
+        const distSq = (px - targetX) * (px - targetX) + (py - targetY) * (py - targetY);
+        const velSq = vx * vx + vy * vy;
+
+        if (distSq < 0.16 && velSq < 0.008) {
+          px = targetX;
+          py = targetY;
+          vx = 0;
+          vy = 0;
+          this.isDisturbed[i] = 0;
+        }
+
+        this.px[i] = px;
+        this.py[i] = py;
+        this.vx[i] = vx;
+        this.vy[i] = vy;
         continue;
       }
 
-      this.timeSinceTouch[i] += dt;
-      const t = this.timeSinceTouch[i];
-
-      let px = this.px[i];
-      let py = this.py[i];
-      let vx = this.vx[i];
-      let vy = this.vy[i];
-
-      px += vx;
-      py += vy;
-      vx *= 0.962;
-      vy *= 0.962;
-
-      if (t > 0.06) {
-        const returnRate = Math.min(0.044, 0.024 + (t - 0.06) * 0.022);
-        px += (targetX - px) * returnRate;
-        py += (targetY - py) * returnRate;
+      // =======================================================================
+      // PHASE 0: DORMANT (ATMOSPHERIC FLOATING DUST IN ROOM)
+      // =======================================================================
+      if (isDormant) {
+        this.px[i] = this.ox[i] + this.initScatterX[i] + driftX * 1.5;
+        this.py[i] = this.oy[i] + this.initScatterY[i] + driftY * 1.5;
+        this.currentAlpha[i] = this.baseAlpha[i] * 0.48;
+        continue;
       }
 
-      const distSq = (px - targetX) * (px - targetX) + (py - targetY) * (py - targetY);
-      const velSq = vx * vx + vy * vy;
-
-      if (distSq < 0.16 && velSq < 0.008) {
-        px = targetX;
-        py = targetY;
-        vx = 0;
-        vy = 0;
-        this.isDisturbed[i] = 0;
+      // =======================================================================
+      // PHASE 1: PREPARE / AWAKENING (0–20% OF ASSEMBLY PROGRESS)
+      // =======================================================================
+      if (isPrepare) {
+        const prepProgress = Math.min(1.0, activeElapsed / (this.assemblyDuration * 0.20));
+        const bias = prepProgress * 0.14;
+        const scX = this.initScatterX[i] * (1 - bias);
+        const scY = this.initScatterY[i] * (1 - bias);
+        this.px[i] = this.ox[i] + scX + driftX * (1.5 - bias * 0.5);
+        this.py[i] = this.oy[i] + scY + driftY * (1.5 - bias * 0.5);
+        this.currentAlpha[i] = this.baseAlpha[i] * (0.48 + prepProgress * 0.14);
+        continue;
       }
 
-      this.px[i] = px;
-      this.py[i] = py;
-      this.vx[i] = vx;
-      this.vy[i] = vy;
+      // =======================================================================
+      // PHASE 2, 3 & 4: ATTRACTION -> GLYPH EMERGENCE -> SETTLE (20–100%+)
+      // =======================================================================
+      const effectiveTravelDuration = this.assemblyDuration * 0.82;
+      const pRaw = (activeElapsed - this.particleDelay[i]) / Math.max(0.001, effectiveTravelDuration);
+      const p = Math.max(0, Math.min(1.0, pRaw));
+
+      // Natural physical ease (Hermite smoothstep)
+      const ease = p * p * (3 - 2 * p);
+
+      const startX = this.ox[i] + this.initScatterX[i];
+      const startY = this.oy[i] + this.initScatterY[i];
+      let cx = (1 - ease) * startX + ease * this.ox[i];
+      let cy = (1 - ease) * startY + ease * this.oy[i];
+
+      // Soft organic curved arc path
+      const arcEnvelope = Math.sin(p * Math.PI);
+      const arcOffset = arcEnvelope * this.arcCurvature[i] * this.scatterDist[i] * 0.36;
+      cx += this.perpNormX[i] * arcOffset;
+      cy += this.perpNormY[i] * arcOffset;
+
+      // Trajectory micro-noise modulation
+      const noiseEnvelope = arcEnvelope * (1 - p * 0.4);
+      const noise = Math.sin(p * 5.2 + this.trajNoisePhase[i]) * 1.8 * noiseEnvelope;
+      cx += this.perpNormX[i] * noise;
+      cy += this.perpNormY[i] * noise;
+
+      // Gentle settling overshoot (Phase 4: 85–100%+)
+      if (pRaw > 1.0) {
+        const overshootP = Math.min(1.0, (pRaw - 1.0) / 0.35);
+        const decay = Math.exp(-overshootP * 4.5) * Math.sin(overshootP * Math.PI * 1.5);
+        cx += decay * this.overshootAmp[i] * (this.initScatterX[i] > 0 ? -1 : 1);
+        cy += decay * this.overshootAmp[i] * (this.initScatterY[i] > 0 ? -1 : 1);
+      }
+
+      // Micro-drift blend upon locking
+      cx += driftX * ease;
+      cy += driftY * ease;
+
+      this.px[i] = cx;
+      this.py[i] = cy;
+
+      // Specular light reflection glint boost during arrival (Tier 1 & Tier 2)
+      if (p > 0.60 && p < 0.98 && this.depthTier[i] >= 1) {
+        const glintWave = Math.sin((p - 0.60) / 0.38 * Math.PI);
+        const boost = this.depthTier[i] === 2 ? 0.28 : 0.14;
+        this.currentAlpha[i] = Math.min(0.98, this.baseAlpha[i] + glintWave * boost);
+      } else {
+        this.currentAlpha[i] = this.baseAlpha[i] * (0.62 + ease * 0.38);
+      }
     }
 
     return true;
@@ -797,24 +1131,73 @@ export class ParticleTextInstance {
 
     const TAU = Math.PI * 2;
 
-    for (let c = 0; c < LUXURY_METALLIC_PALETTE.length; c++) {
-      const group = this.colorGroups[c];
-      if (!group || group.length === 0) continue;
-
-      this.ctx.fillStyle = LUXURY_METALLIC_PALETTE[c];
-      this.ctx.beginPath();
-
-      for (let k = 0; k < group.length; k++) {
-        const i = group[k];
+    // =========================================================================
+    // PASS 1: Soft Micro-Glow Halo for Rare Accent Particles
+    // =========================================================================
+    if (this.haloList.length > 0) {
+      for (let h = 0; h < this.haloList.length; h++) {
+        const i = this.haloList[h];
+        const color = MASTER_DUST_PALETTE[this.colorIdx[i]];
         const x = this.px[i];
         const y = this.py[i];
-        const r = this.radius[i];
+        const hr = this.haloRadius[i];
+        const hAlpha = this.haloAlpha[i] * (this.hasAssembled ? 1.0 : (this.assemblyState === 'DORMANT' ? 0.45 : 0.75));
 
-        this.ctx.moveTo(x + r, y);
-        this.ctx.arc(x, y, r, 0, TAU);
+        this.ctx.fillStyle = `rgba(${color.r}, ${color.g}, ${color.b}, ${hAlpha})`;
+        this.ctx.beginPath();
+        this.ctx.arc(x, y, hr, 0, TAU);
+        this.ctx.fill();
       }
+    }
 
-      this.ctx.fill();
+    // =========================================================================
+    // PASS 2: Batched Metallic Particulate Cores
+    // Tier 0 (MICRO STRUCTURAL) -> Tier 1 (MEDIUM BODY) -> Tier 2 (ACCENT JEWELRY)
+    // =========================================================================
+    const tierAlphas = this.isPriceText ? [0.82, 0.90, 0.96] : [0.62, 0.80, 0.94];
+
+    for (let tier = 0; tier < 3; tier++) {
+      const alphaMultiplier = this.hasAssembled ? 1.0 : (this.assemblyState === 'DORMANT' ? 0.55 : 0.85);
+      const alpha = tierAlphas[tier] * alphaMultiplier;
+
+      for (let c = 0; c < 6; c++) {
+        const group = this.batchGroups[c][tier];
+        if (!group || group.length === 0) continue;
+
+        const color = MASTER_DUST_PALETTE[c];
+        this.ctx.fillStyle = `rgba(${color.r}, ${color.g}, ${color.b}, ${alpha})`;
+        this.ctx.beginPath();
+
+        for (let k = 0; k < group.length; k++) {
+          const i = group[k];
+          const x = this.px[i];
+          const y = this.py[i];
+          const r = this.radius[i];
+
+          this.ctx.moveTo(x + r, y);
+          this.ctx.arc(x, y, r, 0, TAU);
+        }
+
+        this.ctx.fill();
+      }
+    }
+
+    // =========================================================================
+    // PASS 3: Dynamic Micro-Shimmer Specular Highlights
+    // =========================================================================
+    for (let s = 0; s < this.shimmerList.length; s++) {
+      const i = this.shimmerList[s];
+      const curA = this.currentAlpha[i];
+      const baseA = this.baseAlpha[i];
+
+      if (curA > baseA + 0.04) {
+        const boostAlpha = (curA - baseA) * 1.15;
+        // Warm ivory / champagne specular glint
+        this.ctx.fillStyle = `rgba(240, 206, 175, ${Math.min(0.96, boostAlpha)})`;
+        this.ctx.beginPath();
+        this.ctx.arc(this.px[i], this.py[i], this.radius[i] * 1.08, 0, TAU);
+        this.ctx.fill();
+      }
     }
 
     this.ctx.restore();
@@ -828,11 +1211,12 @@ export class ParticleTextInstance {
 }
 
 // ============================================================================
-// CENTRAL SINGLETON MANAGER
+// CENTRAL SINGLETON MANAGER (VIEWPORT & SCROLL REVEAL OBSERVERS)
 // ============================================================================
 class ParticleTextManager {
   private instances: Set<ParticleTextInstance> = new Set();
   private observer: IntersectionObserver | null = null;
+  private revealObserver: IntersectionObserver | null = null;
   private rafId: number | null = null;
   private isRunning: boolean = false;
   private isVisible: boolean = true;
@@ -850,6 +1234,7 @@ class ParticleTextManager {
 
   private initObserver() {
     if (typeof window !== 'undefined' && 'IntersectionObserver' in window) {
+      // 1. Viewport loop observer: wakes up rAF when any instance is near viewport
       this.observer = new IntersectionObserver(
         (entries) => {
           entries.forEach((entry) => {
@@ -857,14 +1242,35 @@ class ParticleTextManager {
               (inst) => inst.canvas === entry.target
             );
             if (instance) {
+              const wasInViewport = instance.inViewport;
               instance.inViewport = entry.isIntersecting;
               if (entry.isIntersecting) {
+                if (!wasInViewport && instance.hasAssembled) {
+                  instance.triggerSoftReEntry();
+                }
                 this.wakeUp();
               }
             }
           });
         },
-        { rootMargin: '100px' }
+        { rootMargin: '120px' }
+      );
+
+      // 2. Scroll Reveal Trigger Observer: starts assembly when approaching ~75–85% of viewport height
+      this.revealObserver = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              const instance = Array.from(this.instances).find(
+                (inst) => inst.canvas === entry.target
+              );
+              if (instance) {
+                instance.triggerReveal();
+              }
+            }
+          });
+        },
+        { rootMargin: '0px 0px -16% 0px' }
       );
     }
   }
@@ -903,6 +1309,18 @@ class ParticleTextManager {
     if (this.observer) {
       this.observer.observe(instance.canvas);
     }
+    if (this.revealObserver && !instance.hasAssembled) {
+      this.revealObserver.observe(instance.canvas);
+    }
+
+    // Check if element is already within viewport on mount (e.g. Hero at top of page)
+    if (typeof window !== 'undefined') {
+      const rect = instance.canvas.getBoundingClientRect();
+      if (rect.top < window.innerHeight * 0.85 && rect.bottom > 0) {
+        instance.triggerReveal();
+      }
+    }
+
     this.wakeUp();
   }
 
@@ -910,6 +1328,9 @@ class ParticleTextManager {
     this.instances.delete(instance);
     if (this.observer) {
       this.observer.unobserve(instance.canvas);
+    }
+    if (this.revealObserver) {
+      this.revealObserver.unobserve(instance.canvas);
     }
     instance.destroy();
   }

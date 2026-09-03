@@ -18,6 +18,7 @@ export const MatrixSection: React.FC = () => {
   // Dynamic reviews state — 0 fake reviews
   const [reviews] = useState<Review[]>([]);
   const [isReviewsModalOpen, setIsReviewsModalOpen] = useState<boolean>(false);
+  const [priceReady, setPriceReady] = useState<boolean>(false);
 
   const reviewCount = reviews.length;
   const averageRating =
@@ -44,20 +45,13 @@ export const MatrixSection: React.FC = () => {
       id="matryca-losu"
       className="relative z-20 w-full py-24 sm:py-32 lg:py-36 px-4 sm:px-6 lg:px-8 scroll-mt-20 sm:scroll-mt-24 lg:scroll-mt-28"
     >
-      {/* Structural Divider: Ultra-thin copper hairline */}
-      <div
-        className="w-full max-w-[min(calc(100%-24px),1440px)] sm:max-w-[min(calc(100%-48px),1440px)] lg:max-w-[min(calc(100%-64px),1440px)] mx-auto mb-14 sm:mb-20 lg:mb-24"
-        aria-hidden="true"
-      >
-        <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-[#D17A52]/25 to-transparent" />
-      </div>
-
+      {/* Editorial Content Container */}
       <div
         id="matrix-content-container"
         className="w-full max-w-[min(calc(100%-24px),1440px)] sm:max-w-[min(calc(100%-48px),1440px)] lg:max-w-[min(calc(100%-64px),1440px)] mx-auto"
       >
         {/* Editorial Top Bar: Dynamic Rating Badge */}
-        <div className="flex flex-wrap items-center justify-between gap-4 pb-5 border-b border-[#D17A52]/15">
+        <div className="flex flex-wrap items-center justify-between gap-4 pb-2">
           <div id="matrix-rating-block" className="flex items-center gap-3">
             {reviewCount === 0 ? (
               <div className="flex items-center gap-2.5">
@@ -125,6 +119,11 @@ export const MatrixSection: React.FC = () => {
             align="left"
             as="h2"
             ariaLabel="EKSPRESOWA ANALIZA MATRYCY LOSU"
+            onAssemblyComplete={() => {
+              setTimeout(() => {
+                setPriceReady(true);
+              }, 200);
+            }}
           />
 
           {/* [ PARTICLE PRICE: Directly below heading ] */}
@@ -135,14 +134,18 @@ export const MatrixSection: React.FC = () => {
           >
             <ParticleText
               text="250 zł"
-              fontSize={28}
-              minFontSize={20}
-              fontWeight={500}
-              letterSpacing={0.08}
+              fontSize={33}
+              minFontSize={24}
+              fontWeight={600}
+              letterSpacing={0.04}
               colorTheme="champagne"
               align="left"
               as="div"
               ariaLabel="Cena: 250 zł"
+              variant="price"
+              isPrice={true}
+              revealMode="dormant"
+              revealTriggered={priceReady}
             />
           </div>
         </div>
@@ -160,25 +163,21 @@ export const MatrixSection: React.FC = () => {
           </p>
         </div>
 
-        {/* Structural Copper Divider */}
-        <div className="my-10 sm:my-14 h-[1px] w-full bg-gradient-to-r from-[#D17A52]/30 via-[#E8B58E]/15 to-transparent" />
-
         {/* =========================================================================
            W ŚRODKU: Luxury Particle-Marked Editorial List
            ========================================================================= */}
-        <div id="matrix-details-inside" className="space-y-6">
+        <div id="matrix-details-inside" className="mt-12 sm:mt-16 space-y-5">
           <div className="flex items-center gap-3">
-            <span className="w-4 h-[1px] bg-[#D17A52]" aria-hidden="true" />
             <h3 className="font-title text-xs sm:text-sm uppercase tracking-[0.22em] text-[#E8B58E] font-medium">
               W ŚRODKU
             </h3>
           </div>
 
-          <div className="divide-y divide-[#D17A52]/15 border-y border-[#D17A52]/15">
+          <div className="divide-y divide-[#E6B491]/10">
             {topicsList.map((item, idx) => (
               <div
                 key={idx}
-                className="group relative flex items-start sm:items-center gap-4 sm:gap-6 py-4.5 sm:py-5 px-3 sm:px-5 rounded-xl transition-colors duration-300 hover:bg-white/[0.015]"
+                className="group relative flex items-start sm:items-center gap-4 sm:gap-6 py-4.5 sm:py-5 px-3 sm:px-4 rounded-xl transition-colors duration-300 hover:bg-white/[0.015]"
               >
                 <div className="w-[16px] h-[16px] shrink-0 pt-0.5 sm:pt-0 flex items-center justify-center opacity-85 group-hover:opacity-100 transition-opacity duration-300">
                   <ParticleMarker />
@@ -191,20 +190,17 @@ export const MatrixSection: React.FC = () => {
           </div>
         </div>
 
-        {/* Structural Copper Divider */}
-        <div className="my-10 sm:my-14 h-[1px] w-full bg-gradient-to-r from-[#D17A52]/30 via-[#E8B58E]/15 to-transparent" />
-
         {/* =========================================================================
            FORMAT / CZAS REALIZACJI / CZEGO POTRZEBUJĘ: Large Lightweight Glass Planes
            ========================================================================= */}
         <div
           id="matrix-specs-grid"
-          className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8"
+          className="mt-12 sm:mt-16 grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8"
         >
           {/* FORMAT */}
           <div
             id="matrix-format-plane"
-            className="p-6 sm:p-7 rounded-2xl bg-white/[0.025] backdrop-blur-[16px] border border-[#D17A52]/20 flex flex-col justify-between space-y-4"
+            className="p-6 sm:p-7 rounded-2xl bg-white/[0.025] backdrop-blur-[16px] border border-[#E6B491]/[0.12] hover:border-[#E6B491]/[0.20] transition-colors duration-300 flex flex-col justify-between space-y-4"
           >
             <h4 className="font-title text-xs sm:text-sm uppercase tracking-[0.2em] text-[#E8B58E] font-medium flex items-center gap-2.5">
               <span className="w-1.5 h-1.5 rounded-full bg-[#D17A52]" />
@@ -218,7 +214,7 @@ export const MatrixSection: React.FC = () => {
           {/* CZAS REALIZACJI */}
           <div
             id="matrix-turnaround-plane"
-            className="p-6 sm:p-7 rounded-2xl bg-white/[0.025] backdrop-blur-[16px] border border-[#D17A52]/20 flex flex-col justify-between space-y-4"
+            className="p-6 sm:p-7 rounded-2xl bg-white/[0.025] backdrop-blur-[16px] border border-[#E6B491]/[0.12] hover:border-[#E6B491]/[0.20] transition-colors duration-300 flex flex-col justify-between space-y-4"
           >
             <h4 className="font-title text-xs sm:text-sm uppercase tracking-[0.2em] text-[#E8B58E] font-medium flex items-center gap-2.5">
               <span className="w-1.5 h-1.5 rounded-full bg-[#D17A52]" />
@@ -232,7 +228,7 @@ export const MatrixSection: React.FC = () => {
           {/* CZEGO POTRZEBUJĘ */}
           <div
             id="matrix-requirements-plane"
-            className="p-6 sm:p-7 rounded-2xl bg-white/[0.025] backdrop-blur-[16px] border border-[#D17A52]/20 flex flex-col justify-between space-y-4"
+            className="p-6 sm:p-7 rounded-2xl bg-white/[0.025] backdrop-blur-[16px] border border-[#E6B491]/[0.12] hover:border-[#E6B491]/[0.20] transition-colors duration-300 flex flex-col justify-between space-y-4"
           >
             <h4 className="font-title text-xs sm:text-sm uppercase tracking-[0.2em] text-[#E8B58E] font-medium flex items-center gap-2.5">
               <span className="w-1.5 h-1.5 rounded-full bg-[#D17A52]" />
@@ -249,19 +245,16 @@ export const MatrixSection: React.FC = () => {
           </div>
         </div>
 
-        {/* Structural Copper Divider */}
-        <div className="my-10 sm:my-14 h-[1px] w-full bg-gradient-to-r from-[#D17A52]/30 via-[#E8B58E]/15 to-transparent" />
-
         {/* =========================================================================
            CTA: SKONTAKTUJ SIĘ ZE MNĄ NA INSTAGRAMIE
            ========================================================================= */}
-        <div id="matrix-cta-container" className="space-y-4 max-w-xl">
+        <div id="matrix-cta-container" className="mt-12 sm:mt-16 space-y-4 max-w-xl">
           <a
             href="https://www.instagram.com/j.moon777/"
             target="_blank"
             rel="noopener noreferrer"
             id="matrix-instagram-cta-btn"
-            className="group relative inline-flex items-center justify-between gap-6 px-7 sm:px-9 py-4 sm:py-4.5 rounded-full border border-[#D17A52]/60 bg-gradient-to-r from-[#5B1533]/40 to-[#2D0818]/60 hover:from-[#731E43]/50 hover:to-[#3E0C23]/70 transition-all duration-300 shadow-[0_10px_30px_-10px_rgba(209,122,82,0.15)] hover:shadow-[0_15px_35px_-10px_rgba(209,122,82,0.3)] hover:border-[#E8B58E]/80 cursor-pointer"
+            className="group relative inline-flex items-center justify-between gap-6 px-7 sm:px-9 py-4 sm:py-4.5 rounded-full border border-[#E6B491]/35 bg-gradient-to-r from-[#5B1533]/40 to-[#2D0818]/60 hover:from-[#731E43]/50 hover:to-[#3E0C23]/70 transition-all duration-300 shadow-[0_10px_30px_-10px_rgba(209,122,82,0.15)] hover:shadow-[0_15px_35px_-10px_rgba(209,122,82,0.3)] hover:border-[#E8B58E]/60 cursor-pointer"
           >
             <div className="flex items-center gap-3">
               <Instagram size={18} className="text-[#E8B58E] group-hover:scale-110 transition-transform duration-300" />
@@ -294,7 +287,7 @@ export const MatrixSection: React.FC = () => {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.96, y: 10 }}
               transition={{ duration: 0.25, ease: 'easeOut' }}
-              className="relative w-full max-w-lg rounded-2xl bg-[#240614] border border-[#D17A52]/40 p-6 sm:p-8 shadow-2xl"
+              className="relative w-full max-w-lg rounded-2xl bg-[#240614] border border-[#E6B491]/20 p-6 sm:p-8 shadow-2xl"
             >
               <button
                 type="button"
@@ -323,7 +316,7 @@ export const MatrixSection: React.FC = () => {
               ) : (
                 <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
                   {reviews.map((rev) => (
-                    <div key={rev.id} className="p-4 rounded-xl bg-white/[0.02] border border-[#D17A52]/20 space-y-2">
+                    <div key={rev.id} className="p-4 rounded-xl bg-white/[0.02] border border-[#E6B491]/12 space-y-2">
                       <div className="flex items-center justify-between">
                         <span className="font-title text-sm text-[#E8B58E]">{rev.author}</span>
                         <span className="font-body text-xs text-[#CFBFB6]/70">{rev.date}</span>
