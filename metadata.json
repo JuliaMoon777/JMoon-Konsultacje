@@ -1,0 +1,8 @@
+{
+  "name": "Remix Jmoon New",
+  "description": "A luxury, editorial landing hero with an interactive particle morphing system and scroll-driven scenes.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
