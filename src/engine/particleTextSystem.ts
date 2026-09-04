@@ -35,8 +35,10 @@ export interface ParticleTextOptions {
   id?: string;
   ariaLabel?: string;
   isPrice?: boolean;
-  variant?: 'heading' | 'price' | 'subheading';
-  revealMode?: 'scroll' | 'immediate' | 'manual' | 'dormant';
+  isHero?: boolean;
+  disableInteraction?: boolean;
+  variant?: 'heading' | 'price' | 'subheading' | 'hero';
+  revealMode?: 'scroll' | 'immediate' | 'manual' | 'dormant' | 'pageLoad';
   revealDelay?: number;
   revealTriggered?: boolean;
   onAssemblyComplete?: () => void;
@@ -369,6 +371,7 @@ export class ParticleTextInstance {
   public padY: number = 0;
   private isReducedMotion: boolean = false;
   private isPriceText: boolean = false;
+  public isHeroTitle: boolean = false;
 
   // Layout change callback for React synchronization
   public onLayoutChange?: (width: number, height: number) => void;
@@ -398,19 +401,21 @@ export class ParticleTextInstance {
   }
 
   private onPointerEnter = (e: PointerEvent) => {
+    if (this.isHeroTitle || this.options.disableInteraction) return;
     const rect = this.canvas.getBoundingClientRect();
     this.prevPointerX = e.clientX - rect.left;
     this.prevPointerY = e.clientY - rect.top;
   };
 
   public getInteractionStrength(): number {
+    if (this.isHeroTitle || this.options.disableInteraction) return 0.0;
     if (this.hasAssembled || this.assemblyState === 'IDLE') return 1.0;
     if (this.assemblyProgress < 0.70) return 0.0;
     return (this.assemblyProgress - 0.70) / 0.30;
   }
 
   private onPointerMove = (e: PointerEvent) => {
-    if (this.isReducedMotion) return;
+    if (this.isReducedMotion || this.isHeroTitle || this.options.disableInteraction) return;
 
     const interactionStrength = this.getInteractionStrength();
     if (interactionStrength <= 0.01) return;
@@ -531,6 +536,10 @@ export class ParticleTextInstance {
 
   public triggerSoftReEntry() {
     if (!this.hasAssembled) return;
+    if (this.isHeroTitle) {
+      this.wakeUp();
+      return;
+    }
     // Mild momentary shimmer ripple across accent particles on re-entry without destroying typography
     for (let s = 0; s < this.shimmerList.length; s++) {
       const i = this.shimmerList[s];
@@ -589,21 +598,49 @@ export class ParticleTextInstance {
 
     this.isPriceText = isPrice;
 
+    this.isHeroTitle =
+      this.options.isHero === true ||
+      this.options.revealMode === 'pageLoad' ||
+      this.options.variant === 'hero' ||
+      (typeof this.options.text === 'string' &&
+        this.options.text.trim().toUpperCase() === 'J MOON NUMEROLOGY');
+
+    if (this.isHeroTitle || this.options.disableInteraction) {
+      this.canvas.style.pointerEvents = 'none';
+    }
+
     // Durations and timing setup
-    this.assemblyDuration = isPrice ? (isMobile ? 0.58 : 0.72) : (isMobile ? 0.95 : 1.25);
-    this.revealDelay = (this.options.revealDelay ?? (isPrice ? 320 : 0)) / 1000;
+    if (this.isHeroTitle) {
+      // 1.4–2.2 sec smooth organic assembly
+      this.assemblyDuration = isMobile ? 1.55 : 1.75;
+      this.revealDelay = 0;
+    } else {
+      this.assemblyDuration = isPrice ? (isMobile ? 0.58 : 0.72) : (isMobile ? 0.95 : 1.25);
+      this.revealDelay = (this.options.revealDelay ?? (isPrice ? 320 : 0)) / 1000;
+    }
 
     const sessionKey = this.options.id || this.options.text;
     const alreadyAssembled = sessionKey ? ASSEMBLED_SESSION_KEYS.has(sessionKey) : false;
 
-    if (alreadyAssembled || this.isReducedMotion || this.options.revealMode === 'immediate') {
+    if (alreadyAssembled || this.isReducedMotion) {
       this.hasAssembled = true;
       this.assemblyProgress = 1.0;
       this.assemblyState = 'IDLE';
+    } else if (this.isHeroTitle) {
+      // Hero: Scattered on frame 0, initiates page load assembly immediately
+      this.hasAssembled = false;
+      this.revealTriggered = true;
+      this.assemblyState = 'PREPARE';
+      this.assemblyElapsed = 0;
+      this.assemblyProgress = 0;
     } else if (this.options.revealTriggered) {
       this.hasAssembled = false;
       this.revealTriggered = true;
       this.assemblyState = 'PREPARE';
+    } else if (this.options.revealMode === 'immediate') {
+      this.hasAssembled = true;
+      this.assemblyProgress = 1.0;
+      this.assemblyState = 'IDLE';
     } else {
       this.hasAssembled = false;
       this.revealTriggered = false;
@@ -812,10 +849,13 @@ export class ParticleTextInstance {
       // Micro-drift setup
       this.phaseX[i] = Math.random() * Math.PI * 2;
       this.phaseY[i] = Math.random() * Math.PI * 2;
-      this.freqX[i] = 0.30 + Math.random() * 0.40;
-      this.freqY[i] = 0.25 + Math.random() * 0.35;
-      this.ampX[i] = isPrice ? 0.08 + Math.random() * 0.08 : 0.15 + Math.random() * 0.22;
-      this.ampY[i] = isPrice ? 0.08 + Math.random() * 0.08 : 0.15 + Math.random() * 0.22;
+      if (this.isHeroTitle) {
+        this.freqX[i] = 0.16 + Math.random() * 0.18;
+        this.freqY[i] = 0.14 + Math.random() * 0.16;
+      } else {
+        this.freqX[i] = 0.30 + Math.random() * 0.40;
+        this.freqY[i] = 0.25 + Math.random() * 0.35;
+      }
 
       const rTier = Math.random();
       let tier = 0; // 0 = MICRO STRUCTURAL, 1 = MEDIUM BODY, 2 = ACCENT JEWELRY
@@ -857,6 +897,25 @@ export class ParticleTextInstance {
         this.isShimmering[i] = Math.random() < 0.60 ? 1 : 0;
       }
 
+      if (this.isHeroTitle) {
+        if (tier === 0) {
+          // structural: 0.1–0.3px
+          this.ampX[i] = 0.10 + Math.random() * 0.16;
+          this.ampY[i] = 0.10 + Math.random() * 0.16;
+        } else if (tier === 1) {
+          // medium: 0.2–0.5px
+          this.ampX[i] = 0.22 + Math.random() * 0.22;
+          this.ampY[i] = 0.22 + Math.random() * 0.22;
+        } else {
+          // rare specular: 0.5–0.8px
+          this.ampX[i] = 0.48 + Math.random() * 0.26;
+          this.ampY[i] = 0.48 + Math.random() * 0.26;
+        }
+      } else {
+        this.ampX[i] = isPrice ? 0.08 + Math.random() * 0.08 : 0.15 + Math.random() * 0.22;
+        this.ampY[i] = isPrice ? 0.08 + Math.random() * 0.08 : 0.15 + Math.random() * 0.22;
+      }
+
       this.depthTier[i] = tier;
       this.radius[i] = rad;
       this.colorIdx[i] = cIdx;
@@ -881,8 +940,14 @@ export class ParticleTextInstance {
       const angleVariation = (Math.sin(i * 0.41) + Math.cos(i * 0.67)) * 0.82;
       const angle = angleBase + angleVariation + (Math.random() - 0.5) * 0.95;
 
-      const minDist = isPrice ? (isMobile ? 18 : 25) : (isMobile ? 25 : 40);
-      const maxDist = isPrice ? (isMobile ? 50 : 70) : (isMobile ? 90 : 180);
+      let minDist = isPrice ? (isMobile ? 18 : 25) : (isMobile ? 25 : 40);
+      let maxDist = isPrice ? (isMobile ? 50 : 70) : (isMobile ? 90 : 180);
+
+      if (this.isHeroTitle) {
+        minDist = isMobile ? 18 : 35;
+        maxDist = isMobile ? 65 : 140;
+      }
+
       const distRand = Math.pow(Math.random(), 0.72);
       const dist = minDist + distRand * (maxDist - minDist);
 
@@ -898,21 +963,40 @@ export class ParticleTextInstance {
       this.perpNormY[i] = scX / normLen;
 
       const sign = Math.random() < 0.5 ? 1 : -1;
-      if (tier === 0) {
-        // Micro structural: arrives first, disciplined contour
-        this.arcCurvature[i] = sign * (0.12 + Math.random() * 0.18);
-        this.particleDelay[i] = Math.random() * 0.12; // 0–120ms
-        this.overshootAmp[i] = isPrice ? 0.02 : 0.08 + Math.random() * 0.08;
-      } else if (tier === 1) {
-        // Medium body: arrives second, graceful arc
-        this.arcCurvature[i] = sign * (0.30 + Math.random() * 0.28);
-        this.particleDelay[i] = 0.05 + Math.random() * 0.17; // 50–220ms
-        this.overshootAmp[i] = isPrice ? 0.15 : 0.32 + Math.random() * 0.30;
+      if (this.isHeroTitle) {
+        if (tier === 0) {
+          // Micro structural: arrives first, disciplined contour forming strokes
+          this.arcCurvature[i] = sign * (0.09 + Math.random() * 0.14);
+          this.particleDelay[i] = Math.random() * 0.12; // 0–120ms
+          this.overshootAmp[i] = 0.02 + Math.random() * 0.04; // essentially no overshoot
+        } else if (tier === 1) {
+          // Medium body: arrives second, adds density and texture
+          this.arcCurvature[i] = sign * (0.24 + Math.random() * 0.22);
+          this.particleDelay[i] = 0.20 + Math.random() * 0.22; // 200–420ms
+          this.overshootAmp[i] = 0.20 + Math.random() * 0.22; // subtle ~0.3px overshoot
+        } else {
+          // Accent jewelry: arrives last with jewelry highlights
+          this.arcCurvature[i] = sign * (0.38 + Math.random() * 0.26);
+          this.particleDelay[i] = 0.45 + Math.random() * 0.25; // 450–700ms
+          this.overshootAmp[i] = 0.45 + Math.random() * 0.38; // max ~0.8px overshoot
+        }
       } else {
-        // Accent jewelry: arrives last, beautiful sweeping arc and light reflection
-        this.arcCurvature[i] = sign * (0.50 + Math.random() * 0.38);
-        this.particleDelay[i] = 0.12 + Math.random() * 0.23; // 120–350ms
-        this.overshootAmp[i] = isPrice ? 0.28 : 0.65 + Math.random() * 0.60;
+        if (tier === 0) {
+          // Micro structural: arrives first, disciplined contour
+          this.arcCurvature[i] = sign * (0.12 + Math.random() * 0.18);
+          this.particleDelay[i] = Math.random() * 0.12; // 0–120ms
+          this.overshootAmp[i] = isPrice ? 0.02 : 0.08 + Math.random() * 0.08;
+        } else if (tier === 1) {
+          // Medium body: arrives second, graceful arc
+          this.arcCurvature[i] = sign * (0.30 + Math.random() * 0.28);
+          this.particleDelay[i] = 0.05 + Math.random() * 0.17; // 50–220ms
+          this.overshootAmp[i] = isPrice ? 0.15 : 0.32 + Math.random() * 0.30;
+        } else {
+          // Accent jewelry: arrives last, beautiful sweeping arc and light reflection
+          this.arcCurvature[i] = sign * (0.50 + Math.random() * 0.38);
+          this.particleDelay[i] = 0.12 + Math.random() * 0.23; // 120–350ms
+          this.overshootAmp[i] = isPrice ? 0.28 : 0.65 + Math.random() * 0.60;
+        }
       }
 
       this.trajNoisePhase[i] = Math.random() * Math.PI * 2;

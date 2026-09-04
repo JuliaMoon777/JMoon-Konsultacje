@@ -220,9 +220,14 @@ export const MatrixSection: React.FC = () => {
               <span className="w-1.5 h-1.5 rounded-full bg-[#D17A52]" />
               CZAS REALIZACJI
             </h4>
-            <p className="font-body text-sm sm:text-[14.5px] text-[#D8C7BD] leading-relaxed font-light">
-              2–3 godziny od zaksięgowania płatności.
-            </p>
+            <div className="space-y-2">
+              <p className="font-body text-sm sm:text-[14.5px] text-[#D8C7BD] leading-relaxed font-light">
+                2–3 godziny w godzinach realizacji.
+              </p>
+              <p className="font-body text-xs sm:text-[13px] text-[#CFBFB6]/85 leading-relaxed font-light">
+                Usługi realizowane są od poniedziałku do piątku, do godz. 21:00. Zamówienia złożone po godz. 21:00, w weekendy lub dni ustawowo wolne od pracy realizowane są w najbliższym dniu roboczym.
+              </p>
+            </div>
           </div>
 
           {/* CZEGO POTRZEBUJĘ */}

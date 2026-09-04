@@ -103,15 +103,15 @@ export const ForecastSection: React.FC = () => {
         <div className="mt-8 sm:mt-10 flex flex-col items-start gap-3 sm:gap-4 overflow-visible w-full max-w-full">
           {/* [ PARTICLE HEADING ] */}
           <ParticleText
-            text="PROGNOZA MIESIĄCA"
+            text="INDYWIDUALNA PROGNOZA MIESIĄCA"
             fontSize={56}
-            minFontSize={28}
+            minFontSize={22}
             fontWeight={600}
             letterSpacing={0.16}
             colorTheme="champagne"
             align="left"
             as="h2"
-            ariaLabel="PROGNOZA MIESIĄCA"
+            ariaLabel="INDYWIDUALNA PROGNOZA MIESIĄCA"
             onAssemblyComplete={() => {
               setTimeout(() => {
                 setPriceReady(true);
@@ -240,9 +240,14 @@ export const ForecastSection: React.FC = () => {
               <span className="w-1.5 h-1.5 rounded-full bg-[#D17A52]" />
               CZAS REALIZACJI
             </h4>
-            <p className="font-body text-sm sm:text-[14.5px] text-[#D8C7BD] leading-relaxed font-light">
-              2–3 godziny od zaksięgowania płatności.
-            </p>
+            <div className="space-y-2">
+              <p className="font-body text-sm sm:text-[14.5px] text-[#D8C7BD] leading-relaxed font-light">
+                2–3 godziny w godzinach realizacji.
+              </p>
+              <p className="font-body text-xs sm:text-[13px] text-[#CFBFB6]/85 leading-relaxed font-light">
+                Usługi realizowane są od poniedziałku do piątku, do godz. 21:00. Zamówienia złożone po godz. 21:00, w weekendy lub dni ustawowo wolne od pracy realizowane są w najbliższym dniu roboczym.
+              </p>
+            </div>
           </div>
 
           {/* CZEGO POTRZEBUJĘ */}
@@ -288,7 +293,7 @@ export const ForecastSection: React.FC = () => {
             id="forecast-cta-subtext"
             className="font-body text-xs sm:text-[13.5px] text-[#CFBFB6]/90 leading-relaxed font-light"
           >
-            Kliknij i napisz w Direct: <span className="text-[#E8B58E] font-normal">„Prognoza miesiąca”</span>. Wyślę Ci link do płatności oraz kilka pytań potrzebnych do przygotowania analizy.
+            Kliknij i napisz w Direct: <span className="text-[#E8B58E] font-normal">„Indywidualna prognoza miesiąca”</span>. Wyślę Ci link do płatności oraz kilka pytań potrzebnych do przygotowania analizy.
           </p>
         </div>
       </div>
@@ -314,7 +319,7 @@ export const ForecastSection: React.FC = () => {
               </button>
 
               <h3 className="font-title text-xl text-[#F8F4F0] font-normal tracking-wide mb-4">
-                Opinie o usłudze Prognoza Miesiąca
+                Opinie o usłudze Indywidualna Prognoza Miesiąca
               </h3>
 
               {reviews.length === 0 ? (

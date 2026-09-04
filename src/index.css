@@ -333,7 +333,9 @@
 /* Responsive Object Bounding Box Clip Paths for Interlocking Geometry */
 @media (min-width: 768px) {
   #service-twoja-rutyna,
-  #service-twoja-rutyna .card-media-layer {
+  #service-kody-ciala,
+  #service-twoja-rutyna .card-media-layer,
+  #service-kody-ciala .card-media-layer {
     -webkit-clip-path: url(#clip-card-left-dt);
     clip-path: url(#clip-card-left-dt);
   }
@@ -351,7 +353,9 @@
 
 @media (max-width: 767px) {
   #service-twoja-rutyna,
-  #service-twoja-rutyna .card-media-layer {
+  #service-kody-ciala,
+  #service-twoja-rutyna .card-media-layer,
+  #service-kody-ciala .card-media-layer {
     -webkit-clip-path: url(#clip-card-top-mb);
     clip-path: url(#clip-card-top-mb);
   }

@@ -73,11 +73,12 @@ export const Footer: React.FC = () => {
                 </li>
                 <li>
                   <a
-                    href="#nota-prawna"
-                    onClick={(e) => handleNavClick(e, 'nota-prawna')}
+                    href="https://jmoon-numerology.com/regulamin_konsultacja"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="text-[#CFBFB6]/75 hover:text-[#E8B58E] transition-colors duration-200"
                   >
-                    Nota prawna
+                    Regulamin
                   </a>
                 </li>
               </ul>

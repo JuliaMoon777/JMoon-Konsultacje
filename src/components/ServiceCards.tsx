@@ -34,9 +34,9 @@ interface ServiceCardData {
 
 const SERVICES: ServiceCardData[] = [
   {
-    id: 'service-twoja-rutyna',
-    targetId: 'twoja-rutyna',
-    title: 'TWOJA RUTYNA',
+    id: 'service-kody-ciala',
+    targetId: 'kody-ciala',
+    title: 'KODY CIAŁA',
     price: '130 zł',
     type: 'routine',
     staggerIndex: 0,
@@ -50,7 +50,7 @@ const SERVICES: ServiceCardData[] = [
   {
     id: 'service-prognoza-miesiaca',
     targetId: 'prognoza-miesiaca',
-    title: 'PROGNOZA MIESIĄCA',
+    title: 'INDYWIDUALNA PROGNOZA MIESIĄCA',
     price: '170 zł',
     type: 'forecast',
     staggerIndex: 1,

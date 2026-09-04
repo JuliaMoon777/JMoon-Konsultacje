@@ -21,18 +21,21 @@ export const Hero: React.FC = () => {
         </div>
 
         {/* [ J MOON NUMEROLOGY — PARTICLES ] */}
-        <div className="relative w-full flex items-center justify-center px-4 max-w-full overflow-visible">
+        <div className="relative w-full flex items-center justify-center px-4 max-w-full overflow-visible pointer-events-none">
           <ParticleText
             text="J MOON NUMEROLOGY"
+            id="hero-title"
             fontSize={54}
             minFontSize={28}
             fontWeight={600}
             letterSpacing={0.28}
             align="center"
-            className="text-center"
+            className="text-center pointer-events-none"
             as="h1"
             ariaLabel="J MOON NUMEROLOGY"
-            revealMode="immediate"
+            revealMode="pageLoad"
+            isHero={true}
+            disableInteraction={true}
           />
         </div>
       </div>
