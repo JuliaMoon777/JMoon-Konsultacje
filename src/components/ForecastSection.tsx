@@ -27,11 +27,26 @@ export const ForecastSection: React.FC = () => {
       : 0;
 
   const forecastItems = [
-    { title: 'TRZY KLUCZOWE ARCHETYPY TWOJEGO MIESIĄCA' },
-    { title: 'GŁÓWNE ENERGIE I ZADANIA OKRESU' },
-    { title: 'MOŻLIWE ZAGROŻENIA I OBSZARY ROZWOJU' },
-    { title: 'NAJWAŻNIEJSZY KIERUNEK UWAGI' },
-    { title: 'ODPOWIEDŹ NA JEDNO GŁÓWNE PYTANIE PRZEZ PRYZMAT AKTUALNYCH ENERGII' },
+    {
+      bold: 'Trzy kluczowe archetypy',
+      rest: ' dla wybranego miesiąca',
+    },
+    {
+      bold: 'Główne energie i zadania',
+      rest: ' na ten czas',
+    },
+    {
+      bold: 'Ostrzeżenia',
+      rest: ' oraz obszary do rozwoju',
+    },
+    {
+      bold: 'Praktyczne wskazówki',
+      rest: ', gdzie skierować energię i uwagę',
+    },
+    {
+      bold: 'Odpowiedź na jedno ważne pytanie',
+      rest: ' przez pryzmat aktualnych energii',
+    },
   ];
 
   return (
@@ -173,23 +188,20 @@ export const ForecastSection: React.FC = () => {
           className="mt-6 sm:mt-8 space-y-3 font-body text-base sm:text-lg text-[#E3D8D2] leading-[1.75] max-w-3xl font-light"
         >
           <p>
-            Dowiedz się, jakie energie będą dominować u Ciebie w tym miesiącu, na co zwrócić uwagę i gdzie najlepiej wykorzystać możliwości tego okresu.
+            Dzięki dacie urodzenia dowiesz się, jakie energie będą u Ciebie dominować w wybranym miesiącu. Zobaczysz, na co zwrócić uwagę i jak najlepiej wykorzystać szanse, które niesie ten czas.
           </p>
           <p className="text-[#CFBFB6]/90">
-            Autorski system prognozy miesiąca oparty na numerologii karmicznej. Każdego miesiąca określane są trzy najsilniejsze archetypy, które pokazują kluczowe energie, zadania i obszary wymagające uwagi.
-          </p>
-          <p className="text-[#E29A70]/90 text-sm sm:text-base italic font-light">
-            System został wielokrotnie sprawdzony w praktyce i podczas analiz dla klientów.
+            Mój autorski system prognozowania, oparty na numerologii karmicznej oraz wiedzy o archetypach, sprawdził się w praktyce podczas licznych analiz dla moich klientów. W każdym miesiącu ujawniają się u nas trzy najsilniejsze archetypy — to one wskazują kluczowe energie, wyzwania i obszary do pracy.
           </p>
         </div>
 
         {/* =========================================================================
-           W ŚRODKU: Luxury Particle-Marked Editorial List
+           CO DOSTAJESZ W ANALIZIE: Luxury Particle-Marked Editorial List
            ========================================================================= */}
         <div id="forecast-details-inside" className="mt-12 sm:mt-16 space-y-5">
           <div className="flex items-center gap-3">
             <h3 className="font-title text-xs sm:text-sm uppercase tracking-[0.22em] text-[#E8B58E] font-medium">
-              W ŚRODKU
+              CO DOSTAJESZ W ANALIZIE:
             </h3>
           </div>
 
@@ -197,55 +209,69 @@ export const ForecastSection: React.FC = () => {
             {forecastItems.map((item, idx) => (
               <div
                 key={idx}
-                className="group relative flex items-start sm:items-center gap-4 sm:gap-6 py-4.5 sm:py-5 px-3 sm:px-4 rounded-xl transition-colors duration-300 hover:bg-white/[0.015]"
+                className="group relative flex items-start gap-4 sm:gap-6 py-4.5 sm:py-5 px-3 sm:px-4 rounded-xl transition-colors duration-300 hover:bg-white/[0.015]"
               >
-                <div className="w-[16px] h-[16px] shrink-0 pt-0.5 sm:pt-0 flex items-center justify-center opacity-85 group-hover:opacity-100 transition-opacity duration-300">
+                <div className="w-[16px] h-[16px] shrink-0 mt-1 flex items-center justify-center opacity-85 group-hover:opacity-100 transition-opacity duration-300">
                   <ParticleMarker />
                 </div>
-                <span className="font-title text-sm sm:text-base lg:text-[16.5px] text-[#F3ECE7]/90 group-hover:text-white font-light tracking-wide leading-relaxed break-words min-w-0 flex-1 transition-colors duration-200">
-                  {item.title}
-                </span>
+                <p className="font-body text-sm sm:text-[15px] lg:text-base text-[#D8C7BD] font-light leading-relaxed tracking-wide break-words min-w-0 flex-1 transition-colors duration-200">
+                  <strong className="font-medium text-[#F8F4F0] group-hover:text-white transition-colors duration-200">
+                    {item.bold}
+                  </strong>
+                  <span>{item.rest}</span>
+                </p>
               </div>
             ))}
           </div>
         </div>
 
         {/* =========================================================================
-           FORMAT / CZAS REALIZACJI / CZEGO POTRZEBUJĘ: Large Lightweight Glass Planes
+           FORMAT / CZAS REALIZACJI / CZEGO POTRZEBUJĘ: Harmonious Glass Specs Grid
            ========================================================================= */}
         <div
           id="forecast-specs-grid"
-          className="mt-12 sm:mt-16 grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8"
+          className="mt-12 sm:mt-16 grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 items-stretch"
         >
           {/* FORMAT */}
           <div
             id="forecast-format-plane"
-            className="p-6 sm:p-7 rounded-2xl bg-white/[0.025] backdrop-blur-[16px] border border-[#E6B491]/[0.12] hover:border-[#E6B491]/[0.20] transition-colors duration-300 flex flex-col justify-between space-y-4"
+            className="h-full p-6 sm:p-7 rounded-2xl bg-white/[0.025] backdrop-blur-[16px] border border-[#E6B491]/[0.12] hover:border-[#E6B491]/[0.20] transition-colors duration-300 flex flex-col"
           >
             <h4 className="font-title text-xs sm:text-sm uppercase tracking-[0.2em] text-[#E8B58E] font-medium flex items-center gap-2.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#D17A52]" />
+              <span className="w-1.5 h-1.5 rounded-full bg-[#D17A52] shrink-0" />
               FORMAT
             </h4>
-            <p className="font-body text-sm sm:text-[14.5px] text-[#D8C7BD] leading-relaxed font-light">
-              Tekst, kilka screenów i wiadomości głosowe w Direct na Instagramie.
-            </p>
+            <div className="mt-5 sm:mt-6 flex-1 flex flex-col space-y-3 sm:space-y-3.5">
+              <p className="font-body text-sm sm:text-[14.5px] text-[#F8F4F0] font-normal leading-snug tracking-wide">
+                Bezpośrednio w Direct na Instagramie
+              </p>
+              <p className="font-body text-xs sm:text-[13.5px] text-[#D8C7BD] font-light leading-relaxed">
+                Osobiste wiadomości głosowe z interpretacją dominujących archetypów.
+              </p>
+              <p className="font-body text-xs sm:text-[12.5px] text-[#CFBFB6]/80 font-light leading-relaxed">
+                Podsumowanie tekstowe najważniejszych okresów oraz zrzuty ekranu.
+              </p>
+            </div>
           </div>
 
           {/* CZAS REALIZACJI */}
           <div
             id="forecast-turnaround-plane"
-            className="p-6 sm:p-7 rounded-2xl bg-white/[0.025] backdrop-blur-[16px] border border-[#E6B491]/[0.12] hover:border-[#E6B491]/[0.20] transition-colors duration-300 flex flex-col justify-between space-y-4"
+            className="h-full p-6 sm:p-7 rounded-2xl bg-white/[0.025] backdrop-blur-[16px] border border-[#E6B491]/[0.12] hover:border-[#E6B491]/[0.20] transition-colors duration-300 flex flex-col"
           >
             <h4 className="font-title text-xs sm:text-sm uppercase tracking-[0.2em] text-[#E8B58E] font-medium flex items-center gap-2.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#D17A52]" />
+              <span className="w-1.5 h-1.5 rounded-full bg-[#D17A52] shrink-0" />
               CZAS REALIZACJI
             </h4>
-            <div className="space-y-2">
-              <p className="font-body text-sm sm:text-[14.5px] text-[#D8C7BD] leading-relaxed font-light">
-                2–3 godziny w godzinach realizacji.
+            <div className="mt-5 sm:mt-6 flex-1 flex flex-col space-y-3 sm:space-y-3.5">
+              <p className="font-body text-sm sm:text-[14.5px] text-[#F8F4F0] font-normal leading-snug tracking-wide">
+                2–3 godziny w godzinach realizacji
               </p>
-              <p className="font-body text-xs sm:text-[13px] text-[#CFBFB6]/85 leading-relaxed font-light">
-                Usługi realizowane są od poniedziałku do piątku, do godz. 21:00. Zamówienia złożone po godz. 21:00, w weekendy lub dni ustawowo wolne od pracy realizowane są w najbliższym dniu roboczym.
+              <p className="font-body text-xs sm:text-[13.5px] text-[#D8C7BD] font-light leading-relaxed">
+                Usługi realizowane są od poniedziałku do piątku, do godz. 21:00.
+              </p>
+              <p className="font-body text-xs sm:text-[12.5px] text-[#CFBFB6]/80 font-light leading-relaxed">
+                Zamówienia złożone po godz. 21:00, w weekendy lub dni ustawowo wolne od pracy realizowane są w najbliższym dniu roboczym.
               </p>
             </div>
           </div>
@@ -253,15 +279,23 @@ export const ForecastSection: React.FC = () => {
           {/* CZEGO POTRZEBUJĘ */}
           <div
             id="forecast-requirements-plane"
-            className="p-6 sm:p-7 rounded-2xl bg-white/[0.025] backdrop-blur-[16px] border border-[#E6B491]/[0.12] hover:border-[#E6B491]/[0.20] transition-colors duration-300 flex flex-col justify-between space-y-4"
+            className="h-full p-6 sm:p-7 rounded-2xl bg-white/[0.025] backdrop-blur-[16px] border border-[#E6B491]/[0.12] hover:border-[#E6B491]/[0.20] transition-colors duration-300 flex flex-col"
           >
             <h4 className="font-title text-xs sm:text-sm uppercase tracking-[0.2em] text-[#E8B58E] font-medium flex items-center gap-2.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#D17A52]" />
+              <span className="w-1.5 h-1.5 rounded-full bg-[#D17A52] shrink-0" />
               CZEGO POTRZEBUJĘ
             </h4>
-            <p className="font-body text-sm sm:text-[14.5px] text-[#D8C7BD] leading-relaxed font-light">
-              Pełnoletność (18+) i dokładna data urodzenia.
-            </p>
+            <div className="mt-5 sm:mt-6 flex-1 flex flex-col space-y-3 sm:space-y-3.5">
+              <p className="font-body text-sm sm:text-[14.5px] text-[#F8F4F0] font-normal leading-snug tracking-wide">
+                Pełnoletność (18+) oraz data urodzenia
+              </p>
+              <p className="font-body text-xs sm:text-[13.5px] text-[#D8C7BD] font-light leading-relaxed">
+                Do przygotowania prognozy wystarczy wyłącznie dokładna data Twojego urodzenia.
+              </p>
+              <p className="font-body text-xs sm:text-[12.5px] text-[#CFBFB6]/80 font-light leading-relaxed">
+                Dokładna godzina oraz miejsce urodzenia w tej analizie nie są wymagane.
+              </p>
+            </div>
           </div>
         </div>
 

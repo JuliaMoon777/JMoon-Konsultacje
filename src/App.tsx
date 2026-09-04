@@ -7,6 +7,7 @@ import { ForecastSection } from './components/ForecastSection';
 import { MatrixSection } from './components/MatrixSection';
 import { LegalNotice } from './components/LegalNotice';
 import { Footer } from './components/Footer';
+import { CookieConsentBanner } from './components/CookieConsentBanner';
 
 export const App: React.FC = () => {
   return (
@@ -37,6 +38,9 @@ export const App: React.FC = () => {
         {/* Section 07: Footer */}
         <Footer />
       </main>
+
+      {/* Cookie Consent Banner & Preferences Modal */}
+      <CookieConsentBanner />
     </div>
   );
 };

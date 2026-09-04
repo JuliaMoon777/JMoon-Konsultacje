@@ -31,7 +31,6 @@ export const MatrixSection: React.FC = () => {
     { title: 'KOMPATYBILNOŚĆ Z KONKRETNĄ OSOBĄ' },
     { title: 'PIENIĄDZE' },
     { title: 'WIDOCZNOŚĆ I REALIZACJA SIEBIE' },
-    { title: 'ZWOLNIENIE Z PRACY' },
     { title: 'ŻYCIOWE ZMIANY' },
     { title: 'OSOBISTY POTENCJAŁ I SPOSOBY JEGO WYKORZYSTANIA' },
     {
@@ -191,41 +190,52 @@ export const MatrixSection: React.FC = () => {
         </div>
 
         {/* =========================================================================
-           FORMAT / CZAS REALIZACJI / CZEGO POTRZEBUJĘ: Large Lightweight Glass Planes
+           FORMAT / CZAS REALIZACJI / CZEGO POTRZEBUJĘ: Harmonious Glass Specs Grid
            ========================================================================= */}
         <div
           id="matrix-specs-grid"
-          className="mt-12 sm:mt-16 grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8"
+          className="mt-12 sm:mt-16 grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 items-stretch"
         >
           {/* FORMAT */}
           <div
             id="matrix-format-plane"
-            className="p-6 sm:p-7 rounded-2xl bg-white/[0.025] backdrop-blur-[16px] border border-[#E6B491]/[0.12] hover:border-[#E6B491]/[0.20] transition-colors duration-300 flex flex-col justify-between space-y-4"
+            className="h-full p-6 sm:p-7 rounded-2xl bg-white/[0.025] backdrop-blur-[16px] border border-[#E6B491]/[0.12] hover:border-[#E6B491]/[0.20] transition-colors duration-300 flex flex-col"
           >
             <h4 className="font-title text-xs sm:text-sm uppercase tracking-[0.2em] text-[#E8B58E] font-medium flex items-center gap-2.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#D17A52]" />
+              <span className="w-1.5 h-1.5 rounded-full bg-[#D17A52] shrink-0" />
               FORMAT
             </h4>
-            <p className="font-body text-sm sm:text-[14.5px] text-[#D8C7BD] leading-relaxed font-light">
-              Tekst, kilka screenów i wiadomości głosowe w Direct na Instagramie.
-            </p>
+            <div className="mt-5 sm:mt-6 flex-1 flex flex-col space-y-3 sm:space-y-3.5">
+              <p className="font-body text-sm sm:text-[14.5px] text-[#F8F4F0] font-normal leading-snug tracking-wide">
+                Bezpośrednio w Direct na Instagramie
+              </p>
+              <p className="font-body text-xs sm:text-[13.5px] text-[#D8C7BD] font-light leading-relaxed">
+                Osobiste wiadomości głosowe z dogłębną odpowiedzią na Twoje pytanie.
+              </p>
+              <p className="font-body text-xs sm:text-[12.5px] text-[#CFBFB6]/80 font-light leading-relaxed">
+                Konkretne notatki tekstowe oraz fragmenty Matrycy Losu w formie screenów.
+              </p>
+            </div>
           </div>
 
           {/* CZAS REALIZACJI */}
           <div
             id="matrix-turnaround-plane"
-            className="p-6 sm:p-7 rounded-2xl bg-white/[0.025] backdrop-blur-[16px] border border-[#E6B491]/[0.12] hover:border-[#E6B491]/[0.20] transition-colors duration-300 flex flex-col justify-between space-y-4"
+            className="h-full p-6 sm:p-7 rounded-2xl bg-white/[0.025] backdrop-blur-[16px] border border-[#E6B491]/[0.12] hover:border-[#E6B491]/[0.20] transition-colors duration-300 flex flex-col"
           >
             <h4 className="font-title text-xs sm:text-sm uppercase tracking-[0.2em] text-[#E8B58E] font-medium flex items-center gap-2.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#D17A52]" />
+              <span className="w-1.5 h-1.5 rounded-full bg-[#D17A52] shrink-0" />
               CZAS REALIZACJI
             </h4>
-            <div className="space-y-2">
-              <p className="font-body text-sm sm:text-[14.5px] text-[#D8C7BD] leading-relaxed font-light">
-                2–3 godziny w godzinach realizacji.
+            <div className="mt-5 sm:mt-6 flex-1 flex flex-col space-y-3 sm:space-y-3.5">
+              <p className="font-body text-sm sm:text-[14.5px] text-[#F8F4F0] font-normal leading-snug tracking-wide">
+                2–3 godziny w godzinach realizacji
               </p>
-              <p className="font-body text-xs sm:text-[13px] text-[#CFBFB6]/85 leading-relaxed font-light">
-                Usługi realizowane są od poniedziałku do piątku, do godz. 21:00. Zamówienia złożone po godz. 21:00, w weekendy lub dni ustawowo wolne od pracy realizowane są w najbliższym dniu roboczym.
+              <p className="font-body text-xs sm:text-[13.5px] text-[#D8C7BD] font-light leading-relaxed">
+                Usługi realizowane są od poniedziałku do piątku, do godz. 21:00.
+              </p>
+              <p className="font-body text-xs sm:text-[12.5px] text-[#CFBFB6]/80 font-light leading-relaxed">
+                Zamówienia złożone po godz. 21:00, w weekendy lub dni ustawowo wolne od pracy realizowane są w najbliższym dniu roboczym.
               </p>
             </div>
           </div>
@@ -233,18 +243,21 @@ export const MatrixSection: React.FC = () => {
           {/* CZEGO POTRZEBUJĘ */}
           <div
             id="matrix-requirements-plane"
-            className="p-6 sm:p-7 rounded-2xl bg-white/[0.025] backdrop-blur-[16px] border border-[#E6B491]/[0.12] hover:border-[#E6B491]/[0.20] transition-colors duration-300 flex flex-col justify-between space-y-4"
+            className="h-full p-6 sm:p-7 rounded-2xl bg-white/[0.025] backdrop-blur-[16px] border border-[#E6B491]/[0.12] hover:border-[#E6B491]/[0.20] transition-colors duration-300 flex flex-col"
           >
             <h4 className="font-title text-xs sm:text-sm uppercase tracking-[0.2em] text-[#E8B58E] font-medium flex items-center gap-2.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#D17A52]" />
+              <span className="w-1.5 h-1.5 rounded-full bg-[#D17A52] shrink-0" />
               CZEGO POTRZEBUJĘ
             </h4>
-            <div className="space-y-2">
-              <p className="font-body text-sm sm:text-[14.5px] text-[#D8C7BD] leading-relaxed font-light">
-                Pełnoletność (18+), dokładna data urodzenia i Twoje pytanie.
+            <div className="mt-5 sm:mt-6 flex-1 flex flex-col space-y-3 sm:space-y-3.5">
+              <p className="font-body text-sm sm:text-[14.5px] text-[#F8F4F0] font-normal leading-snug tracking-wide">
+                Pełnoletność (18+) i data urodzenia
               </p>
-              <p className="text-xs text-[#E29A70]/90 italic font-light">
-                W przypadku kompatybilności potrzebna jest data urodzenia drugiej osoby.
+              <p className="font-body text-xs sm:text-[13.5px] text-[#D8C7BD] font-light leading-relaxed">
+                Dokładna data urodzenia oraz jedno sprecyzowane pytanie, na które szukasz odpowiedzi.
+              </p>
+              <p className="font-body text-xs sm:text-[12.5px] text-[#E29A70]/90 italic font-light leading-relaxed">
+                W przypadku analizy kompatybilności relacji potrzebna jest również data urodzenia drugiej osoby.
               </p>
             </div>
           </div>

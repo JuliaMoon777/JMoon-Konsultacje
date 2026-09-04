@@ -1,4 +1,5 @@
 import React from 'react';
+import { openCookieSettings } from './CookieConsentBanner';
 
 // Original logo URL for J Moon Numerology
 export const LOGO_URL = 'https://i.postimg.cc/j2szw3rX/JMoon-new-logo.png';
@@ -81,6 +82,15 @@ export const Footer: React.FC = () => {
                     Regulamin
                   </a>
                 </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={openCookieSettings}
+                    className="text-[#CFBFB6]/75 hover:text-[#E8B58E] transition-colors duration-200 text-left cursor-pointer"
+                  >
+                    Ustawienia cookies
+                  </button>
+                </li>
               </ul>
             </div>
 
@@ -118,6 +128,13 @@ export const Footer: React.FC = () => {
         {/* Bottom Bar: Copyright & Subtle Micro-Separator */}
         <div className="mt-12 sm:mt-16 pt-6 sm:pt-7 border-t border-[#E6B491]/[0.08] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-[11px] sm:text-xs text-[#CFBFB6]/45 font-light tracking-wide">
           <p>© 2026 JMoon Numerology. Wszelkie prawa zastrzeżone.</p>
+          <button
+            type="button"
+            onClick={openCookieSettings}
+            className="hover:text-[#E8B58E] transition-colors duration-200 uppercase tracking-wider text-[10px] sm:text-[11px] text-[#CFBFB6]/60 cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#E8B58E]/50 rounded-sm"
+          >
+            Ustawienia cookies
+          </button>
         </div>
       </div>
     </footer>
