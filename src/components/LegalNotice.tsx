@@ -11,8 +11,9 @@ export const LEGAL_NOTICE_DATA = {
 
 export const LegalNotice: React.FC = () => {
   return (
-    <footer
+    <section
       id="nota-prawna"
+      role="region"
       className="relative z-20 w-full py-16 sm:py-20 lg:py-24 px-4 sm:px-6 lg:px-8"
       aria-label="Nota prawna"
     >
@@ -37,6 +38,6 @@ export const LegalNotice: React.FC = () => {
           ))}
         </div>
       </div>
-    </footer>
+    </section>
   );
 };

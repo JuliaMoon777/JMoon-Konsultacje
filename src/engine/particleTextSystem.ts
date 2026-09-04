@@ -116,12 +116,13 @@ export function computeSmartTextLayout(
     return totalW;
   };
 
-  const maxAllowedWidth = Math.max(260, containerWidth - 16);
+  const maxAllowedWidth = Math.max(160, containerWidth - 12);
+  const minSafeSize = Math.max(15, Math.floor(minFontSize * 0.72));
 
   // If explicit lines were provided by the caller
   if (explicitLines && explicitLines.length > 0) {
     let fontSize = requestedFontSize;
-    while (fontSize > minFontSize) {
+    while (fontSize > minSafeSize) {
       let longestLineW = 0;
       for (const line of explicitLines) {
         const w = measureTextAtSize(line, fontSize);
@@ -153,7 +154,7 @@ export function computeSmartTextLayout(
   // Single word handling
   if (words.length <= 1) {
     let fontSize = requestedFontSize;
-    while (fontSize > minFontSize) {
+    while (fontSize > minSafeSize) {
       const w = measureTextAtSize(cleanText, fontSize);
       if (w <= maxAllowedWidth) break;
       fontSize -= 1;
@@ -173,7 +174,7 @@ export function computeSmartTextLayout(
   const singleLineW = measureTextAtSize(cleanText, requestedFontSize);
   if (!autoWrap || singleLineW <= maxAllowedWidth) {
     let fontSize = requestedFontSize;
-    while (fontSize > minFontSize && measureTextAtSize(cleanText, fontSize) > maxAllowedWidth) {
+    while (fontSize > minSafeSize && measureTextAtSize(cleanText, fontSize) > maxAllowedWidth) {
       fontSize -= 1;
     }
     const finalW = measureTextAtSize(cleanText, fontSize);
@@ -210,7 +211,7 @@ export function computeSmartTextLayout(
     ];
 
     let fontSize = requestedFontSize;
-    while (fontSize > minFontSize) {
+    while (fontSize > minSafeSize) {
       const w1 = measureTextAtSize(twoLines[0], fontSize);
       const w2 = measureTextAtSize(twoLines[1], fontSize);
       if (Math.max(w1, w2) <= maxAllowedWidth) break;
@@ -262,9 +263,9 @@ export function computeSmartTextLayout(
     return { lines: result, maxW };
   };
 
-  while (fontSize >= minFontSize) {
+  while (fontSize >= minSafeSize) {
     const wrap = tryGreedyWrap(fontSize);
-    if (wrap.maxW <= maxAllowedWidth || fontSize === minFontSize) {
+    if (wrap.maxW <= maxAllowedWidth || fontSize === minSafeSize) {
       greedyLines = wrap.lines;
       maxWidth = wrap.maxW;
       break;
@@ -525,6 +526,9 @@ export class ParticleTextInstance {
       const key = this.options.id || this.options.text;
       if (key) ASSEMBLED_SESSION_KEYS.add(key);
       this.render();
+      if (this.options.onAssemblyComplete) {
+        this.options.onAssemblyComplete();
+      }
       return;
     }
 
@@ -626,6 +630,9 @@ export class ParticleTextInstance {
       this.hasAssembled = true;
       this.assemblyProgress = 1.0;
       this.assemblyState = 'IDLE';
+      if (this.isReducedMotion && this.options.onAssemblyComplete) {
+        this.options.onAssemblyComplete();
+      }
     } else if (this.isHeroTitle) {
       // Hero: Scattered on frame 0, initiates page load assembly immediately
       this.hasAssembled = false;
@@ -647,7 +654,8 @@ export class ParticleTextInstance {
       this.assemblyState = 'DORMANT';
     }
 
-    this.dpr = Math.min(Math.max(window.devicePixelRatio || 1, 2.0), 3.0);
+    const maxDpr = isMobile ? 1.75 : 2.0;
+    this.dpr = Math.min(window.devicePixelRatio || 1, maxDpr);
 
     // Compute smart typographic layout
     const layout = computeSmartTextLayout(

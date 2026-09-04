@@ -106,9 +106,9 @@ export const ParticleText: React.FC<ParticleTextProps> = ({
 
     // Set up ResizeObserver to recalculate on container resize
     let resizeObserver: ResizeObserver | null = null;
+    let resizeTimeout: number | null = null;
     if (typeof window !== 'undefined' && 'ResizeObserver' in window && containerRef.current) {
       const targetObserved = containerRef.current.parentElement || containerRef.current;
-      let resizeTimeout: number | null = null;
 
       resizeObserver = new ResizeObserver((entries) => {
         for (const entry of entries) {
@@ -129,6 +129,10 @@ export const ParticleText: React.FC<ParticleTextProps> = ({
 
     return () => {
       isMounted = false;
+      if (resizeTimeout) {
+        window.clearTimeout(resizeTimeout);
+        resizeTimeout = null;
+      }
       if (resizeObserver) {
         resizeObserver.disconnect();
       }
@@ -177,7 +181,9 @@ export const ParticleText: React.FC<ParticleTextProps> = ({
       <canvas
         ref={canvasRef}
         aria-hidden="true"
-        className="block shrink-0 cursor-default select-none pointer-events-auto"
+        className={`block shrink-0 cursor-default select-none ${
+          disableInteraction ? 'pointer-events-none' : 'pointer-events-auto'
+        }`}
       />
     </>
   );

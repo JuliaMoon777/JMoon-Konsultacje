@@ -591,13 +591,9 @@ export const LuxuryBackground: React.FC = () => {
     window.addEventListener('scroll', handleScroll, { passive: true });
     handleScroll();
 
-    const handleVisibility = () => {
-      isVisible = document.visibilityState === 'visible';
-    };
-    document.addEventListener('visibilitychange', handleVisibility);
-
     const startTime = performance.now();
     let lastFrameTimestamp = performance.now();
+    let isLoopRunning = false;
 
     // =========================================================================
     // 2D CANVAS FALLBACK ENGINE (in case WebGL is unavailable)
@@ -663,8 +659,8 @@ export const LuxuryBackground: React.FC = () => {
     // MAIN RENDER LOOP
     // =========================================================================
     const renderFrame = (timestamp: number) => {
-      if (!isVisible && !prefersReducedMotion) {
-        animationFrameId = requestAnimationFrame(renderFrame);
+      if (!isVisible || prefersReducedMotion) {
+        isLoopRunning = false;
         return;
       }
 
@@ -810,15 +806,49 @@ export const LuxuryBackground: React.FC = () => {
         render2DFallback(t);
       }
 
-      if (!prefersReducedMotion) {
+      if (!prefersReducedMotion && isVisible) {
+        animationFrameId = requestAnimationFrame(renderFrame);
+      } else {
+        isLoopRunning = false;
+      }
+    };
+
+    const startLoop = () => {
+      if (!isLoopRunning && isVisible && !prefersReducedMotion) {
+        isLoopRunning = true;
+        lastFrameTimestamp = performance.now();
         animationFrameId = requestAnimationFrame(renderFrame);
       }
     };
 
-    animationFrameId = requestAnimationFrame(renderFrame);
+    const stopLoop = () => {
+      if (isLoopRunning) {
+        isLoopRunning = false;
+        cancelAnimationFrame(animationFrameId);
+      }
+    };
+
+    const handleVisibility = () => {
+      const wasVisible = isVisible;
+      isVisible = document.visibilityState === 'visible';
+      if (isVisible && !wasVisible) {
+        startLoop();
+      } else if (!isVisible && wasVisible) {
+        stopLoop();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    if (prefersReducedMotion) {
+      // Render one single frozen high-fidelity frame
+      renderFrame(startTime);
+    } else {
+      isLoopRunning = true;
+      animationFrameId = requestAnimationFrame(renderFrame);
+    }
 
     return () => {
-      cancelAnimationFrame(animationFrameId);
+      stopLoop();
       window.removeEventListener('resize', resize);
       window.removeEventListener('scroll', handleScroll);
       document.removeEventListener('visibilitychange', handleVisibility);
