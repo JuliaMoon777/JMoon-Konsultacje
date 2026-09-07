@@ -5,6 +5,7 @@ import { ServiceCards } from './components/ServiceCards';
 import { RoutineSection } from './components/RoutineSection';
 import { ForecastSection } from './components/ForecastSection';
 import { MatrixSection } from './components/MatrixSection';
+import { OpinieSection } from './components/OpinieSection';
 import { LegalNotice } from './components/LegalNotice';
 import { Footer } from './components/Footer';
 import { CookieConsentBanner } from './components/CookieConsentBanner';
@@ -32,7 +33,10 @@ export const App: React.FC = () => {
         {/* Section 05: Ekspresowa Analiza Matrycy Losu — 250 zł Editorial Section */}
         <MatrixSection />
 
-        {/* Section 06: Nota Prawna / Disclaimer */}
+        {/* Section 06: Opinie Klientów */}
+        <OpinieSection />
+
+        {/* Section 07: Nota Prawna / Disclaimer */}
         <LegalNotice />
 
         {/* Section 07: Footer */}

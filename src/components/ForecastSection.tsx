@@ -20,6 +20,15 @@ export const ForecastSection: React.FC = () => {
   const [isReviewsModalOpen, setIsReviewsModalOpen] = useState<boolean>(false);
   const [priceReady, setPriceReady] = useState<boolean>(false);
 
+  const handleScrollToOpinie = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    const el = document.getElementById('opinie');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+      window.history.pushState(null, '', '#opinie');
+    }
+  };
+
   const reviewCount = reviews.length;
   const averageRating =
     reviewCount > 0
@@ -101,14 +110,14 @@ export const ForecastSection: React.FC = () => {
                 <span className="font-body text-xs text-[#CFBFB6]/80">
                   ({reviewCount} {reviewCount === 1 ? 'opinia' : 'opinii'})
                 </span>
-                <button
-                  type="button"
+                <a
+                  href="#opinie"
                   id="forecast-open-reviews-btn"
-                  onClick={() => setIsReviewsModalOpen(true)}
-                  className="ml-2 font-title text-xs uppercase tracking-[0.18em] text-[#E8B58E] hover:text-[#F3ECE7] underline decoration-[#D17A52]/50 underline-offset-4 transition-colors duration-200"
+                  onClick={handleScrollToOpinie}
+                  className="ml-2 font-title text-xs uppercase tracking-[0.18em] text-[#E8B58E] hover:text-[#F3ECE7] underline decoration-[#D17A52]/50 underline-offset-4 transition-colors duration-200 cursor-pointer"
                 >
                   OTWÓRZ OPINIE
-                </button>
+                </a>
               </div>
             )}
           </div>

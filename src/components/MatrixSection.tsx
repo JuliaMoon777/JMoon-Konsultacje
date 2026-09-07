@@ -3,22 +3,24 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Star, ArrowUpRight, Instagram, X } from 'lucide-react';
 import { ParticleText } from './ParticleText';
 import { ParticleMarker } from './ParticleMarker';
-
-interface Review {
-  id: string;
-  author: string;
-  rating: number;
-  text: string;
-  date: string;
-}
+import { MATRIX_REVIEWS, Review } from '../data/reviews';
 
 export const MatrixSection: React.FC = () => {
   const sectionRef = useRef<HTMLElement>(null);
 
-  // Dynamic reviews state — 0 fake reviews
-  const [reviews] = useState<Review[]>([]);
+  // Dynamic reviews state — initialized with verified client review
+  const [reviews] = useState<Review[]>(MATRIX_REVIEWS);
   const [isReviewsModalOpen, setIsReviewsModalOpen] = useState<boolean>(false);
   const [priceReady, setPriceReady] = useState<boolean>(false);
+
+  const handleScrollToOpinie = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    const el = document.getElementById('opinie');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+      window.history.pushState(null, '', '#opinie');
+    }
+  };
 
   const reviewCount = reviews.length;
   const averageRating =
@@ -90,14 +92,14 @@ export const MatrixSection: React.FC = () => {
                 <span className="font-body text-xs text-[#CFBFB6]/80">
                   ({reviewCount} {reviewCount === 1 ? 'opinia' : 'opinii'})
                 </span>
-                <button
-                  type="button"
+                <a
+                  href="#opinie"
                   id="matrix-open-reviews-btn"
-                  onClick={() => setIsReviewsModalOpen(true)}
-                  className="ml-2 font-title text-xs uppercase tracking-[0.18em] text-[#E8B58E] hover:text-[#F3ECE7] underline decoration-[#D17A52]/50 underline-offset-4 transition-colors duration-200"
+                  onClick={handleScrollToOpinie}
+                  className="ml-2 font-title text-xs uppercase tracking-[0.18em] text-[#E8B58E] hover:text-[#F3ECE7] underline decoration-[#D17A52]/50 underline-offset-4 transition-colors duration-200 cursor-pointer"
                 >
                   OTWÓRZ OPINIE
-                </button>
+                </a>
               </div>
             )}
           </div>
@@ -339,7 +341,7 @@ export const MatrixSection: React.FC = () => {
                         <span className="font-title text-sm text-[#E8B58E]">{rev.author}</span>
                         <span className="font-body text-xs text-[#CFBFB6]/70">{rev.date}</span>
                       </div>
-                      <p className="font-body text-sm text-[#E3D8D2] font-light leading-relaxed">
+                      <p className="font-body text-sm text-[#E3D8D2] font-light leading-relaxed whitespace-pre-line">
                         {rev.text}
                       </p>
                     </div>

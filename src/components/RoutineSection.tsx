@@ -20,6 +20,15 @@ export const RoutineSection: React.FC = () => {
   const [isReviewsModalOpen, setIsReviewsModalOpen] = useState<boolean>(false);
   const [priceReady, setPriceReady] = useState<boolean>(false);
 
+  const handleScrollToOpinie = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    const el = document.getElementById('opinie');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+      window.history.pushState(null, '', '#opinie');
+    }
+  };
+
   // Calculate dynamic rating metrics
   const reviewCount = reviews.length;
   const averageRating =
@@ -95,14 +104,14 @@ export const RoutineSection: React.FC = () => {
                 <span className="font-body text-xs text-[#CFBFB6]/80">
                   ({reviewCount} {reviewCount === 1 ? 'opinia' : 'opinii'})
                 </span>
-                <button
-                  type="button"
+                <a
+                  href="#opinie"
                   id="routine-open-reviews-btn"
-                  onClick={() => setIsReviewsModalOpen(true)}
-                  className="ml-2 font-title text-xs uppercase tracking-[0.18em] text-[#E8B58E] hover:text-[#F3ECE7] underline decoration-[#D17A52]/50 underline-offset-4 transition-colors duration-200"
+                  onClick={handleScrollToOpinie}
+                  className="ml-2 font-title text-xs uppercase tracking-[0.18em] text-[#E8B58E] hover:text-[#F3ECE7] underline decoration-[#D17A52]/50 underline-offset-4 transition-colors duration-200 cursor-pointer"
                 >
                   OTWÓRZ OPINIE
-                </button>
+                </a>
               </div>
             )}
           </div>
@@ -213,14 +222,14 @@ export const RoutineSection: React.FC = () => {
               FORMAT
             </h4>
             <div className="mt-5 sm:mt-6 flex-1 flex flex-col space-y-3 sm:space-y-3.5">
-              <p className="font-body text-sm sm:text-[14.5px] text-[#F8F4F0] font-normal leading-snug tracking-wide">
+              <p className="font-body text-sm sm:text-[14.5px] text-[#F8F4F0] font-medium leading-snug tracking-wide">
                 Bezpośrednio w Direct na Instagramie
               </p>
               <p className="font-body text-xs sm:text-[13.5px] text-[#D8C7BD] font-light leading-relaxed">
                 Osobiste wiadomości głosowe ze szczegółowym omówieniem energii i wskazówek.
               </p>
-              <p className="font-body text-xs sm:text-[12.5px] text-[#CFBFB6]/80 font-light leading-relaxed">
-                Zestaw podsumowań tekstowych oraz zrzuty ekranu kluczowych układów.
+              <p className="font-body text-xs sm:text-[13px] text-[#CFBFB6]/90 font-light leading-relaxed">
+                Zestaw podsumowań tekstowych oraz zrzuty ekranu z kluczowymi kwestiami.
               </p>
             </div>
           </div>
