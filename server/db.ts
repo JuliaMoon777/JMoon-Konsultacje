@@ -57,27 +57,95 @@ const REDIS_KEY = 'jmoon_reviews';
 
 // In-memory cache for fast response within the same serverless container lifecycle
 let inMemoryReviews: Review[] | null = null;
+let cachedRedisClient: Redis | null = null;
+let hasLoggedRedisError = false;
+
+/**
+ * Normalizes Redis credentials from various supported environment variables:
+ * - KV_REST_API_URL / KV_REST_API_TOKEN (Vercel KV)
+ * - UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN (Upstash Redis REST)
+ * - rediss:// or redis:// standard connection strings (auto-converted to REST endpoint https://<hostname>)
+ */
+function normalizeRedisCredentials(): { url: string; token: string } | null {
+  const candidateUrls = [
+    process.env.KV_REST_API_URL,
+    process.env.UPSTASH_REDIS_REST_URL,
+    process.env.UPSTASH_REDIS_URL,
+    process.env.REDIS_URL,
+  ].filter((u): u is string => Boolean(u && typeof u === 'string' && u.trim() !== ''));
+
+  let resolvedUrl: string | null = null;
+  let extractedToken: string | null = null;
+
+  // 1. First look for an explicit https:// or http:// REST endpoint URL
+  for (const candidate of candidateUrls) {
+    const trimmed = candidate.trim();
+    if (trimmed.startsWith('https://') || trimmed.startsWith('http://')) {
+      resolvedUrl = trimmed;
+      break;
+    }
+  }
+
+  // 2. If no https:// URL found, inspect rediss:// or redis:// URIs and parse hostname + password
+  if (!resolvedUrl) {
+    for (const candidate of candidateUrls) {
+      const trimmed = candidate.trim();
+      if (trimmed.startsWith('rediss://') || trimmed.startsWith('redis://')) {
+        try {
+          const parsed = new URL(trimmed);
+          if (parsed.hostname) {
+            resolvedUrl = `https://${parsed.hostname}`;
+            if (parsed.password) {
+              extractedToken = decodeURIComponent(parsed.password);
+            }
+            break;
+          }
+        } catch (e) {
+          console.warn('[DB] Could not parse redis URI:', e);
+        }
+      }
+    }
+  }
+
+  const token =
+    process.env.KV_REST_API_TOKEN?.trim() ||
+    process.env.UPSTASH_REDIS_REST_TOKEN?.trim() ||
+    process.env.UPSTASH_REDIS_TOKEN?.trim() ||
+    extractedToken;
+
+  if (resolvedUrl && token) {
+    return { url: resolvedUrl, token };
+  }
+
+  return null;
+}
 
 /**
  * Returns an active Upstash Redis client configured from environment variables.
- * Checks UPSTASH_REDIS_REST_URL/TOKEN and Vercel KV_REST_API_URL/TOKEN.
  */
 function getRedisClient(): Redis | null {
-  const url = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+  if (cachedRedisClient) {
+    return cachedRedisClient;
+  }
 
-  if (url && token) {
+  const creds = normalizeRedisCredentials();
+  if (creds) {
     try {
-      return new Redis({ url, token });
+      cachedRedisClient = new Redis({ url: creds.url, token: creds.token });
+      return cachedRedisClient;
     } catch (err) {
-      console.error('[DB] Failed to instantiate Upstash Redis client with credentials:', err);
+      if (!hasLoggedRedisError) {
+        console.error('[DB] Failed to instantiate Upstash Redis client with credentials:', err);
+        hasLoggedRedisError = true;
+      }
       return null;
     }
   }
 
   // Attempt Redis.fromEnv() if environment variables match default patterns
   try {
-    return Redis.fromEnv();
+    cachedRedisClient = Redis.fromEnv();
+    return cachedRedisClient;
   } catch {
     return null;
   }
