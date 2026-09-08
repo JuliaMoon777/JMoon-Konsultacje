@@ -9,43 +9,46 @@ import { OpinieSection } from './components/OpinieSection';
 import { LegalNotice } from './components/LegalNotice';
 import { Footer } from './components/Footer';
 import { CookieConsentBanner } from './components/CookieConsentBanner';
+import { ReviewsProvider } from './context/ReviewsContext';
 
 export const App: React.FC = () => {
   return (
-    <div className="min-h-screen bg-[#2D0818] text-[#F8F4F0] relative selection:bg-[#B85F43]/40 selection:text-[#F8F4F0]">
-      {/* Luminous Animated Gradient Luxury Atmospheric Background */}
-      <LuxuryBackground />
+    <ReviewsProvider>
+      <div className="min-h-screen bg-[#2D0818] text-[#F8F4F0] relative selection:bg-[#B85F43]/40 selection:text-[#F8F4F0]">
+        {/* Luminous Animated Gradient Luxury Atmospheric Background */}
+        <LuxuryBackground />
 
-      {/* Main Content */}
-      <main className="relative z-10">
-        {/* Phase 01: Interactive Particle Hero */}
-        <Hero />
+        {/* Main Content */}
+        <main className="relative z-10">
+          {/* Phase 01: Interactive Particle Hero */}
+          <Hero />
 
-        {/* Section 02: Service Cards Section */}
-        <ServiceCards />
+          {/* Section 02: Service Cards Section */}
+          <ServiceCards />
 
-        {/* Section 03: Kody Ciała — 130 zł Editorial Section */}
-        <RoutineSection />
+          {/* Section 03: Kody Ciała — 130 zł Editorial Section */}
+          <RoutineSection />
 
-        {/* Section 04: Indywidualna Prognoza Miesiąca — 170 zł Editorial Section */}
-        <ForecastSection />
+          {/* Section 04: Indywidualna Prognoza Miesiąca — 170 zł Editorial Section */}
+          <ForecastSection />
 
-        {/* Section 05: Ekspresowa Analiza Matrycy Losu — 250 zł Editorial Section */}
-        <MatrixSection />
+          {/* Section 05: Ekspresowa Analiza Matrycy Losu — 250 zł Editorial Section */}
+          <MatrixSection />
 
-        {/* Section 06: Opinie Klientów */}
-        <OpinieSection />
+          {/* Section 06: Opinie Klientów */}
+          <OpinieSection />
 
-        {/* Section 07: Nota Prawna / Disclaimer */}
-        <LegalNotice />
+          {/* Section 07: Nota Prawna / Disclaimer */}
+          <LegalNotice />
 
-        {/* Section 07: Footer */}
-        <Footer />
-      </main>
+          {/* Section 07: Footer */}
+          <Footer />
+        </main>
 
-      {/* Cookie Consent Banner & Preferences Modal */}
-      <CookieConsentBanner />
-    </div>
+        {/* Cookie Consent Banner & Preferences Modal */}
+        <CookieConsentBanner />
+      </div>
+    </ReviewsProvider>
   );
 };
 

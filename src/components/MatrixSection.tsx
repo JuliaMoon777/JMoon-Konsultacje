@@ -3,22 +3,41 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Star, ArrowUpRight, Instagram, X } from 'lucide-react';
 import { ParticleText } from './ParticleText';
 import { ParticleMarker } from './ParticleMarker';
-import { MATRIX_REVIEWS, Review } from '../data/reviews';
+import { MATRIX_REVIEWS } from '../data/reviews';
+import { useReviews } from '../context/ReviewsContext';
 
 export const MatrixSection: React.FC = () => {
   const sectionRef = useRef<HTMLElement>(null);
+  const { getReviewsByService } = useReviews();
 
-  // Dynamic reviews state — initialized with verified client review
-  const [reviews] = useState<Review[]>(MATRIX_REVIEWS);
+  // Dynamic reviews for this specific service
+  const serviceReviews = getReviewsByService('EKSPRESOWA ANALIZA MATRYCY LOSU');
+  const reviews = serviceReviews.length > 0 ? serviceReviews : MATRIX_REVIEWS;
+
   const [isReviewsModalOpen, setIsReviewsModalOpen] = useState<boolean>(false);
   const [priceReady, setPriceReady] = useState<boolean>(false);
 
   const handleScrollToOpinie = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
-    const el = document.getElementById('opinie');
+    const el = document.getElementById('opinie') || document.getElementById('opinie-list');
     if (el) {
-      el.scrollIntoView({ behavior: 'smooth' });
-      window.history.pushState(null, '', '#opinie');
+      const top = el.getBoundingClientRect().top + window.scrollY - 60;
+      window.scrollTo({
+        top: Math.max(0, top),
+        behavior: 'smooth',
+      });
+      try {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } catch {
+        // Safe fallback
+      }
+      try {
+        window.history.pushState(null, '', '#opinie');
+      } catch {
+        // Ignore sandboxed iframe restriction
+      }
+    } else {
+      window.location.hash = '#opinie';
     }
   };
 
@@ -52,8 +71,8 @@ export const MatrixSection: React.FC = () => {
         className="w-full max-w-[min(calc(100%-24px),1440px)] sm:max-w-[min(calc(100%-48px),1440px)] lg:max-w-[min(calc(100%-64px),1440px)] mx-auto"
       >
         {/* Editorial Top Bar: Dynamic Rating Badge */}
-        <div className="flex flex-wrap items-center justify-between gap-4 pb-2">
-          <div id="matrix-rating-block" className="flex items-center gap-3">
+        <div className="relative z-30 flex flex-wrap items-center justify-between gap-4 pb-2">
+          <div id="matrix-rating-block" className="relative z-30 flex items-center gap-3">
             {reviewCount === 0 ? (
               <div className="flex items-center gap-2.5">
                 <div className="flex items-center gap-1" aria-label="Ocena: brak opinii">
@@ -70,6 +89,14 @@ export const MatrixSection: React.FC = () => {
                 <span className="font-title text-sm tracking-wider text-[#E8B58E]/75 font-normal">
                   „0”
                 </span>
+                <a
+                  href="#opinie"
+                  id="matrix-open-reviews-btn"
+                  onClick={handleScrollToOpinie}
+                  className="relative z-30 ml-2 font-title text-xs uppercase tracking-[0.18em] text-[#E8B58E] hover:text-[#F3ECE7] underline decoration-[#D17A52]/50 underline-offset-4 transition-colors duration-200 cursor-pointer pointer-events-auto py-1 px-1 -my-1"
+                >
+                  OTWÓRZ OPINIE
+                </a>
               </div>
             ) : (
               <div className="flex items-center gap-3">
@@ -96,7 +123,7 @@ export const MatrixSection: React.FC = () => {
                   href="#opinie"
                   id="matrix-open-reviews-btn"
                   onClick={handleScrollToOpinie}
-                  className="ml-2 font-title text-xs uppercase tracking-[0.18em] text-[#E8B58E] hover:text-[#F3ECE7] underline decoration-[#D17A52]/50 underline-offset-4 transition-colors duration-200 cursor-pointer"
+                  className="relative z-30 ml-2 font-title text-xs uppercase tracking-[0.18em] text-[#E8B58E] hover:text-[#F3ECE7] underline decoration-[#D17A52]/50 underline-offset-4 transition-colors duration-200 cursor-pointer pointer-events-auto py-1 px-1 -my-1"
                 >
                   OTWÓRZ OPINIE
                 </a>

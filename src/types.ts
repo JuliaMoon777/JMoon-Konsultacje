@@ -47,3 +47,32 @@ export interface MatrixNode {
   clusterCount: number;
 }
 
+export type ServiceType =
+  | 'KODY CIAŁA'
+  | 'Indywidualna prognoza miesiąca'
+  | 'EKSPRESOWA ANALIZA MATRYCY LOSU';
+
+export interface Review {
+  id: string;
+  name: string;
+  author?: string; // Backwards-compatible alias for name
+  service: ServiceType;
+  rating: number; // 1-5
+  text: string;
+  date: string;
+  published: boolean;
+}
+
+export interface ReviewStats {
+  total: number;
+  published: number;
+  hidden: number;
+  averageRating: number;
+  byService: {
+    kodyCiala: number;
+    indywidualnaPrognoza: number;
+    ekspresowaAnaliza: number;
+  };
+}
+
+
