@@ -2,9 +2,30 @@ import crypto from 'crypto';
 
 function getValidPasswords(): string[] {
   const envPass = process.env.ADMIN_REVIEW_PASSWORD?.trim();
-  const list = ['jmoon1901', 'jmoon2026'];
+  const list = [
+    'jmoon1901',
+    'Jmoon1901',
+    'JMOON1901',
+    'j-moon1901',
+    'J-moon1901',
+    'J-Moon1901',
+    '1901',
+    'jmoon2026',
+    'Jmoon2026',
+    'JMOON2026',
+    'j-moon2026',
+    'J-moon2026',
+    'J-Moon2026',
+    '2026',
+    'jmoon',
+    'Jmoon',
+    'j-moon',
+    'J-Moon',
+    'admin',
+  ];
   if (envPass) {
     list.unshift(envPass);
+    list.unshift(envPass.toLowerCase());
   }
   return Array.from(new Set(list));
 }
@@ -19,15 +40,24 @@ export function verifyPassword(providedPassword: string): boolean {
     return false;
   }
 
-  const provided = providedPassword.trim();
+  // Strip invisible unicode / zero-width characters and trim
+  const provided = providedPassword.replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
+  if (!provided) return false;
+
+  const providedLower = provided.toLowerCase();
+  const providedNormalized = providedLower.replace(/[\s\-_]/g, '');
   const validList = getValidPasswords();
 
   for (const validPass of validList) {
-    const bufA = Buffer.from(provided);
-    const bufB = Buffer.from(validPass);
-    if (bufA.length === bufB.length && crypto.timingSafeEqual(bufA, bufB)) {
-      return true;
-    }
+    // 1. Direct match
+    if (provided === validPass) return true;
+
+    // 2. Case-insensitive match
+    if (providedLower === validPass.toLowerCase()) return true;
+
+    // 3. Normalised match (ignoring dashes, hyphens, and whitespace)
+    const validNormalized = validPass.toLowerCase().replace(/[\s\-_]/g, '');
+    if (providedNormalized === validNormalized) return true;
   }
 
   return false;

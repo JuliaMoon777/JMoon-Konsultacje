@@ -227,6 +227,9 @@ export const AdminReviewsModal: React.FC<AdminReviewsModalProps> = ({ isOpen, on
                   placeholder="Wprowadź kod..."
                   autoFocus
                   autoComplete="current-password"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
                   className="w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-[#E6B491]/20 focus:border-[#E8B58E] focus:outline-none focus:ring-1 focus:ring-[#E8B58E] text-[#F8F4F0] placeholder-[#CFBFB6]/40 text-sm font-body transition-colors"
                 />
               </div>
