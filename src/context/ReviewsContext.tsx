@@ -112,62 +112,96 @@ export const ReviewsProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   }, [isAdmin, adminToken, fetchStats]);
 
-  // Admin login via server endpoint
+  // Admin login via server endpoint with robust fallback
   const loginAdmin = async (password: string): Promise<boolean> => {
     setAdminError(null);
     try {
-      let res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password }),
-      });
-
-      // Fallback to /api/auth if /api/auth/login returns 404
-      if (res.status === 404) {
-        res = await fetch('/api/auth', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ password }),
-        });
-      }
-
-      let data: any = null;
-      try {
-        data = await res.json();
-      } catch {
-        setAdminError('Nieprawidłowa odpowiedź serwera. Spróbuj ponownie.');
+      const trimmedPassword = (password || '').trim();
+      if (!trimmedPassword) {
+        setAdminError('Wprowadź kod dostępu.');
         return false;
       }
 
-      if (!res.ok || !data?.success) {
-        setAdminError(data?.error || 'Nieprawidłowy kod dostępu.');
-        return false;
-      }
+      // Try both /api/auth/login and /api/auth endpoints for cross-platform hosting (Vercel, Express, Cloud Run)
+      const endpoints = ['/api/auth/login', '/api/auth'];
+      let lastErrorMessage = 'Nieprawidłowy kod dostępu.';
+      let succeeded = false;
 
-      const token = data.token;
-      setAdminToken(token);
-      setIsAdmin(true);
-      sessionStorage.setItem('jmoon_adm_token', token);
+      for (const endpoint of endpoints) {
+        try {
+          const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password: trimmedPassword }),
+          });
 
-      // Immediately fetch admin reviews with token
-      const reviewsRes = await fetch('/api/reviews', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (reviewsRes.ok) {
-        const reviewsData = await reviewsRes.json();
-        if (reviewsData && Array.isArray(reviewsData.reviews)) {
-          setAdminReviews(reviewsData.reviews);
-          setReviews(reviewsData.reviews.filter((r: Review) => r.published));
+          // If the endpoint isn't routed (404/405), continue to next candidate
+          if (res.status === 404 || res.status === 405) {
+            continue;
+          }
+
+          const rawText = await res.text();
+          let data: any = null;
+          try {
+            data = JSON.parse(rawText);
+          } catch {
+            // Non-JSON response (e.g. server HTML error) -> try next endpoint
+            continue;
+          }
+
+          if (res.ok && data?.success && data?.token) {
+            const token = data.token;
+            setAdminToken(token);
+            setIsAdmin(true);
+            sessionStorage.setItem('jmoon_adm_token', token);
+
+            // Immediately fetch admin reviews with token
+            try {
+              const reviewsRes = await fetch('/api/reviews', {
+                headers: { Authorization: `Bearer ${token}` },
+              });
+              if (reviewsRes.ok) {
+                const reviewsData = await reviewsRes.json();
+                if (reviewsData && Array.isArray(reviewsData.reviews)) {
+                  setAdminReviews(reviewsData.reviews);
+                  setReviews(reviewsData.reviews.filter((r: Review) => r.published));
+                }
+              }
+            } catch (e) {
+              console.error('[Admin] Error fetching admin reviews:', e);
+            }
+
+            // Fetch stats
+            try {
+              const statsRes = await fetch('/api/admin/stats', {
+                headers: { Authorization: `Bearer ${token}` },
+              });
+              if (statsRes.ok) {
+                const statsData = await statsRes.json();
+                if (statsData?.stats) setAdminStats(statsData.stats);
+              }
+            } catch (e) {
+              console.error('[Admin] Error fetching stats:', e);
+            }
+
+            succeeded = true;
+            return true;
+          } else {
+            // Server explicitly returned an error message in JSON
+            lastErrorMessage = data?.error || 'Nieprawidłowy kod dostępu.';
+            if (res.status === 401 || res.status === 400) {
+              setAdminError(lastErrorMessage);
+              return false;
+            }
+          }
+        } catch (fetchErr) {
+          console.warn(`[Admin] Attempt failed for ${endpoint}:`, fetchErr);
         }
       }
 
-      // Fetch stats
-      const statsRes = await fetch('/api/admin/stats', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (statsRes.ok) {
-        const statsData = await statsRes.json();
-        if (statsData?.stats) setAdminStats(statsData.stats);
+      if (!succeeded) {
+        setAdminError(lastErrorMessage);
+        return false;
       }
 
       return true;

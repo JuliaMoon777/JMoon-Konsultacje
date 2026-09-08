@@ -56,6 +56,11 @@ async function parseBody(req: VercelRequest): Promise<any> {
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const method = (req.method || 'GET').toUpperCase();
 
+  // OPTIONS for CORS preflight
+  if (method === 'OPTIONS') {
+    return sendResponse(res, 200, { ok: true });
+  }
+
   // POST /api/auth or /api/auth/login
   if (method === 'POST') {
     const body = await parseBody(req);

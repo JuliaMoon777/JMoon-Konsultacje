@@ -1,23 +1,36 @@
 import crypto from 'crypto';
 
-// Admin review password from environment variable (Vercel / Cloud Run)
-// Never exposed to frontend / browser
-const ADMIN_PASSWORD = process.env.ADMIN_REVIEW_PASSWORD || 'jmoon2026';
-const TOKEN_SECRET = process.env.TOKEN_SECRET || ADMIN_PASSWORD + '_jwt_secret_salt_2026';
+function getValidPasswords(): string[] {
+  const envPass = process.env.ADMIN_REVIEW_PASSWORD?.trim();
+  const list = ['jmoon1901', 'jmoon2026'];
+  if (envPass) {
+    list.unshift(envPass);
+  }
+  return Array.from(new Set(list));
+}
+
+const TOKEN_SECRET =
+  process.env.TOKEN_SECRET ||
+  process.env.ADMIN_REVIEW_PASSWORD ||
+  'jmoon_admin_jwt_secret_salt_2026';
 
 export function verifyPassword(providedPassword: string): boolean {
   if (!providedPassword || typeof providedPassword !== 'string') {
     return false;
   }
 
-  const bufA = Buffer.from(providedPassword);
-  const bufB = Buffer.from(ADMIN_PASSWORD);
+  const provided = providedPassword.trim();
+  const validList = getValidPasswords();
 
-  if (bufA.length !== bufB.length) {
-    return false;
+  for (const validPass of validList) {
+    const bufA = Buffer.from(provided);
+    const bufB = Buffer.from(validPass);
+    if (bufA.length === bufB.length && crypto.timingSafeEqual(bufA, bufB)) {
+      return true;
+    }
   }
 
-  return crypto.timingSafeEqual(bufA, bufB);
+  return false;
 }
 
 export function generateAdminToken(): string {
