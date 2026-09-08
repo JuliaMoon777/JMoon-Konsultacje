@@ -16,12 +16,6 @@ function getValidPasswords(): string[] {
     'j-moon2026',
     'J-moon2026',
     'J-Moon2026',
-    '2026',
-    'jmoon',
-    'Jmoon',
-    'j-moon',
-    'J-Moon',
-    'admin',
   ];
   if (envPass) {
     list.unshift(envPass);
