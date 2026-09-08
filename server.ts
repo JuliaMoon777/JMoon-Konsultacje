@@ -23,8 +23,8 @@ async function startServer() {
   // AUTHENTICATION API
   // ==========================================
 
-  // Verify access code / admin password
-  app.post('/api/auth/login', (req, res) => {
+  // Verify access code / admin password (both /api/auth/login and /api/auth)
+  const handleLogin = (req: express.Request, res: express.Response) => {
     const { password } = req.body || {};
     if (!password || typeof password !== 'string') {
       res.status(400).json({ success: false, error: 'Wprowadź kod dostępu.' });
@@ -39,14 +39,20 @@ async function startServer() {
 
     const token = generateAdminToken();
     res.json({ success: true, token });
-  });
+  };
+
+  app.post('/api/auth/login', handleLogin);
+  app.post('/api/auth', handleLogin);
 
   // Verify active session token
-  app.get('/api/auth/verify', (req, res) => {
+  const handleVerify = (req: express.Request, res: express.Response) => {
     const authHeader = req.headers.authorization;
     const isValid = verifyAdminToken(authHeader);
     res.json({ valid: isValid });
-  });
+  };
+
+  app.get('/api/auth/verify', handleVerify);
+  app.get('/api/auth', handleVerify);
 
   // ==========================================
   // REVIEWS API
@@ -70,7 +76,7 @@ async function startServer() {
   app.get('/api/admin/stats', async (req, res) => {
     const authHeader = req.headers.authorization;
     if (!verifyAdminToken(authHeader)) {
-      res.status(401).json({ success: false, error: 'Brak uprawnień.' });
+      res.status(401).json({ success: false, error: 'Brak uprawnień. Zaloguj się jako administrator.' });
       return;
     }
 
@@ -87,7 +93,7 @@ async function startServer() {
   app.post('/api/reviews', async (req, res) => {
     const authHeader = req.headers.authorization;
     if (!verifyAdminToken(authHeader)) {
-      res.status(401).json({ success: false, error: 'Brak uprawnień.' });
+      res.status(401).json({ success: false, error: 'Brak uprawnień. Zaloguj się jako administrator.' });
       return;
     }
 
@@ -130,23 +136,28 @@ async function startServer() {
       res.status(201).json({
         success: true,
         review: created,
-        message: 'Opinia została dodana.',
+        message: 'Opinia została pomyślnie dodana.',
       });
     } catch (err) {
       console.error('[API] Error creating review:', err);
-      res.status(500).json({ success: false, error: 'Błąd podczas dodawania opinii.' });
+      res.status(500).json({ success: false, error: 'Wystąpił błąd podczas dodawania opinii.' });
     }
   });
 
   // Update review (Admin only)
-  app.put('/api/reviews/:id', async (req, res) => {
+  const handleUpdate = async (req: express.Request, res: express.Response) => {
     const authHeader = req.headers.authorization;
     if (!verifyAdminToken(authHeader)) {
-      res.status(401).json({ success: false, error: 'Brak uprawnień.' });
+      res.status(401).json({ success: false, error: 'Brak uprawnień. Zaloguj się jako administrator.' });
       return;
     }
 
-    const { id } = req.params;
+    const id = req.params.id || (req.query.id as string) || req.body?.id;
+    if (!id) {
+      res.status(400).json({ success: false, error: 'ID opinii jest wymagane.' });
+      return;
+    }
+
     const { name, service, rating, text, date, published } = req.body || {};
 
     if (service && !ALLOWED_SERVICES.includes(service as ServiceType)) {
@@ -158,11 +169,11 @@ async function startServer() {
     }
 
     try {
-      const updateData: any = {};
-      if (typeof name === 'string') updateData.name = name.trim();
+      const updateData: Partial<Omit<import('./server/db').Review, 'id'>> = {};
+      if (typeof name === 'string' && name.trim() !== '') updateData.name = name.trim();
       if (service) updateData.service = service;
       if (rating !== undefined) updateData.rating = Math.min(5, Math.max(1, Number(rating)));
-      if (typeof text === 'string') updateData.text = text.trim();
+      if (typeof text === 'string' && text.trim() !== '') updateData.text = text.trim();
       if (typeof date === 'string') updateData.date = date.trim();
       if (published !== undefined) updateData.published = Boolean(published);
 
@@ -177,17 +188,24 @@ async function startServer() {
       console.error('[API] Error updating review:', err);
       res.status(500).json({ success: false, error: 'Błąd podczas aktualizacji opinii.' });
     }
-  });
+  };
+
+  app.put('/api/reviews/:id', handleUpdate);
+  app.put('/api/reviews', handleUpdate);
 
   // Delete review (Admin only)
-  app.delete('/api/reviews/:id', async (req, res) => {
+  const handleDelete = async (req: express.Request, res: express.Response) => {
     const authHeader = req.headers.authorization;
     if (!verifyAdminToken(authHeader)) {
-      res.status(401).json({ success: false, error: 'Brak uprawnień.' });
+      res.status(401).json({ success: false, error: 'Brak uprawnień. Zaloguj się jako administrator.' });
       return;
     }
 
-    const { id } = req.params;
+    const id = req.params.id || (req.query.id as string) || req.body?.id;
+    if (!id) {
+      res.status(400).json({ success: false, error: 'ID opinii jest wymagane.' });
+      return;
+    }
 
     try {
       const deleted = await deleteReview(id);
@@ -201,7 +219,10 @@ async function startServer() {
       console.error('[API] Error deleting review:', err);
       res.status(500).json({ success: false, error: 'Błąd podczas usuwania opinii.' });
     }
-  });
+  };
+
+  app.delete('/api/reviews/:id', handleDelete);
+  app.delete('/api/reviews', handleDelete);
 
   // Health check
   app.get('/api/health', (_req, res) => {

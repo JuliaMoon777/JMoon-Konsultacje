@@ -2,36 +2,93 @@ import type { IncomingMessage, ServerResponse } from 'http';
 import { verifyPassword, generateAdminToken, verifyAdminToken } from '../server/auth';
 
 interface VercelRequest extends IncomingMessage {
-  body: any;
-  query: Record<string, string | string[]>;
+  body?: any;
 }
 
 interface VercelResponse extends ServerResponse {
-  status: (code: number) => VercelResponse;
-  json: (data: any) => void;
+  status?: (code: number) => VercelResponse;
+  json?: (data: any) => void;
+}
+
+function sendResponse(res: VercelResponse, statusCode: number, data: any) {
+  if (typeof res.status === 'function' && typeof res.json === 'function') {
+    return res.status(statusCode).json(data);
+  }
+  res.statusCode = statusCode;
+  res.setHeader('Content-Type', 'application/json');
+  res.end(JSON.stringify(data));
+}
+
+async function parseBody(req: VercelRequest): Promise<any> {
+  if (req.body !== undefined && req.body !== null) {
+    if (typeof req.body === 'string') {
+      try {
+        return JSON.parse(req.body);
+      } catch {
+        return {};
+      }
+    }
+    return req.body;
+  }
+
+  return new Promise((resolve) => {
+    let raw = '';
+    req.on('data', (chunk) => {
+      raw += chunk;
+    });
+    req.on('end', () => {
+      if (!raw || raw.trim() === '') {
+        resolve({});
+        return;
+      }
+      try {
+        resolve(JSON.parse(raw));
+      } catch {
+        resolve({});
+      }
+    });
+    req.on('error', () => {
+      resolve({});
+    });
+  });
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method === 'POST') {
-    const { password } = req.body || {};
+  const method = (req.method || 'GET').toUpperCase();
+
+  // POST /api/auth or /api/auth/login
+  if (method === 'POST') {
+    const body = await parseBody(req);
+    const { password } = body || {};
+
     if (!password || typeof password !== 'string') {
-      return res.status(400).json({ success: false, error: 'Wprowadź kod dostępu.' });
+      return sendResponse(res, 400, {
+        success: false,
+        error: 'Wprowadź kod dostępu.',
+      });
     }
 
     const isValid = verifyPassword(password.trim());
     if (!isValid) {
-      return res.status(401).json({ success: false, error: 'Nieprawidłowy kod dostępu.' });
+      return sendResponse(res, 401, {
+        success: false,
+        error: 'Nieprawidłowy kod dostępu.',
+      });
     }
 
     const token = generateAdminToken();
-    return res.status(200).json({ success: true, token });
+    return sendResponse(res, 200, {
+      success: true,
+      token,
+    });
   }
 
-  if (req.method === 'GET') {
-    const authHeader = req.headers.authorization;
+  // GET /api/auth (verify)
+  if (method === 'GET') {
+    const authHeader = req.headers['authorization'];
     const isValid = verifyAdminToken(authHeader);
-    return res.status(200).json({ valid: isValid });
+    return sendResponse(res, 200, { valid: isValid });
   }
 
-  res.status(405).json({ error: 'Method not allowed' });
+  return sendResponse(res, 405, { error: 'Metoda niedozwolona.' });
 }

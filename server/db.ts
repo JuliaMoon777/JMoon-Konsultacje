@@ -1,5 +1,4 @@
-import fs from 'fs';
-import path from 'path';
+import { Redis } from '@upstash/redis';
 
 export type ServiceType =
   | 'KODY CIAŁA'
@@ -35,7 +34,7 @@ export const ALLOWED_SERVICES: ServiceType[] = [
   'EKSPRESOWA ANALIZA MATRYCY LOSU',
 ];
 
-const INITIAL_REVIEWS: Review[] = [
+export const INITIAL_REVIEWS: Review[] = [
   {
     id: 'rev-agnieszka-matrix-1',
     name: 'Agnieszka',
@@ -54,93 +53,148 @@ PS. Twój sposób tłumaczenia bardzo do mnie trafia. Ciepły głos i prosty prz
   },
 ];
 
-// Persistent file path for server environments where external KV is not configured
-const STORAGE_FILE = path.join(process.cwd(), '.data-reviews.json');
+const REDIS_KEY = 'jmoon_reviews';
 
-// Memory cache
+// In-memory cache for fast response within the same serverless container lifecycle
 let inMemoryReviews: Review[] | null = null;
 
-// External DB config (Upstash Redis / Vercel KV REST)
-const KV_URL = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
-const KV_TOKEN = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+/**
+ * Returns an active Upstash Redis client configured from environment variables.
+ * Checks UPSTASH_REDIS_REST_URL/TOKEN and Vercel KV_REST_API_URL/TOKEN.
+ */
+function getRedisClient(): Redis | null {
+  const url = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
 
-async function loadFromExternalKV(): Promise<Review[] | null> {
-  if (!KV_URL || !KV_TOKEN) return null;
-  try {
-    const res = await fetch(`${KV_URL}/get/jmoon_reviews`, {
-      headers: { Authorization: `Bearer ${KV_TOKEN}` },
-    });
-    if (!res.ok) return null;
-    const data = await res.json();
-    if (data && data.result) {
-      const parsed = typeof data.result === 'string' ? JSON.parse(data.result) : data.result;
-      if (Array.isArray(parsed)) return parsed;
+  if (url && token) {
+    try {
+      return new Redis({ url, token });
+    } catch (err) {
+      console.error('[DB] Failed to instantiate Upstash Redis client with credentials:', err);
+      return null;
     }
-    return null;
-  } catch (err) {
-    console.warn('[DB] Failed to load from external KV, falling back to local storage:', err);
+  }
+
+  // Attempt Redis.fromEnv() if environment variables match default patterns
+  try {
+    return Redis.fromEnv();
+  } catch {
     return null;
   }
 }
 
-async function saveToExternalKV(reviews: Review[]): Promise<boolean> {
-  if (!KV_URL || !KV_TOKEN) return false;
-  try {
-    const res = await fetch(`${KV_URL}/set/jmoon_reviews`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${KV_TOKEN}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify([JSON.stringify(reviews)]),
-    });
-    return res.ok;
-  } catch (err) {
-    console.warn('[DB] Failed to save to external KV:', err);
-    return false;
-  }
-}
+/**
+ * Parse raw Redis data that can be:
+ * - Native JS Array of Review objects
+ * - Serialized JSON string of array
+ * - Array containing serialized JSON string (from previous REST API versions)
+ */
+function parseReviewsData(raw: unknown): Review[] | null {
+  if (!raw) return null;
 
-function loadFromLocalFile(): Review[] {
-  try {
-    if (fs.existsSync(STORAGE_FILE)) {
-      const raw = fs.readFileSync(STORAGE_FILE, 'utf8');
+  // Case 1: Serialized JSON string
+  if (typeof raw === 'string') {
+    try {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed;
+      return parseReviewsData(parsed);
+    } catch (e) {
+      console.error('[DB] Error parsing reviews JSON string from Redis:', e);
+      return null;
+    }
+  }
+
+  // Case 2: Array
+  if (Array.isArray(raw)) {
+    if (raw.length === 0) {
+      return [];
+    }
+
+    // Check if the array contains serialized JSON strings (legacy double-serialized format)
+    if (typeof raw[0] === 'string') {
+      try {
+        const firstParsed = JSON.parse(raw[0]);
+        if (Array.isArray(firstParsed)) {
+          return parseReviewsData(firstParsed);
+        }
+      } catch {}
+
+      const parsedElements: Review[] = [];
+      for (const item of raw) {
+        if (typeof item === 'string') {
+          try {
+            parsedElements.push(JSON.parse(item));
+          } catch {}
+        } else if (item && typeof item === 'object') {
+          parsedElements.push(item as Review);
+        }
+      }
+      if (parsedElements.length > 0) {
+        return parsedElements;
       }
     }
-  } catch (e) {
-    console.warn('[DB] Could not read local file:', e);
+
+    // Filter and return valid Review objects
+    const validReviews = raw.filter(
+      (r) => r && typeof r === 'object' && ('id' in r || 'text' in r || 'name' in r)
+    );
+    return validReviews as Review[];
   }
-  return [...INITIAL_REVIEWS];
+
+  return null;
 }
 
-function saveToLocalFile(reviews: Review[]): void {
-  try {
-    fs.writeFileSync(STORAGE_FILE, JSON.stringify(reviews, null, 2), 'utf8');
-  } catch (e) {
-    console.warn('[DB] Could not write local file:', e);
-  }
-}
-
+/**
+ * Fetch all reviews from Upstash Redis (source of truth).
+ * Seeds with INITIAL_REVIEWS only if the key jmoon_reviews does not exist yet.
+ */
 export async function getReviews(adminView = false): Promise<Review[]> {
-  if (inMemoryReviews === null) {
-    const fromKV = await loadFromExternalKV();
-    if (fromKV && fromKV.length > 0) {
-      inMemoryReviews = fromKV;
-    } else {
-      inMemoryReviews = loadFromLocalFile();
+  const redis = getRedisClient();
+
+  if (redis) {
+    try {
+      const rawData = await redis.get(REDIS_KEY);
+      let reviews = parseReviewsData(rawData);
+
+      // If key jmoon_reviews does not exist yet, seed it with INITIAL_REVIEWS
+      if (reviews === null) {
+        reviews = [...INITIAL_REVIEWS];
+        try {
+          await redis.set(REDIS_KEY, reviews);
+        } catch (setErr) {
+          console.error('[DB] Failed to seed initial reviews to Redis:', setErr);
+        }
+      }
+
+      inMemoryReviews = reviews;
+
+      if (adminView) {
+        return [...reviews];
+      }
+      return reviews.filter((r) => r.published === true);
+    } catch (err) {
+      console.error('[DB] Error querying Upstash Redis:', err);
+      // If Redis has transient failure, return in-memory cache if available or initial reviews
+      if (inMemoryReviews !== null) {
+        return adminView ? [...inMemoryReviews] : inMemoryReviews.filter((r) => r.published === true);
+      }
+      return adminView ? [...INITIAL_REVIEWS] : INITIAL_REVIEWS.filter((r) => r.published === true);
     }
+  }
+
+  // Fallback when Redis environment variables are not set (e.g. local offline dev)
+  if (inMemoryReviews === null) {
+    inMemoryReviews = [...INITIAL_REVIEWS];
   }
 
   if (adminView) {
     return [...inMemoryReviews];
   }
-
   return inMemoryReviews.filter((r) => r.published === true);
 }
 
+/**
+ * Create a new review and persist it to Upstash Redis.
+ */
 export async function createReview(data: {
   name: string;
   service: ServiceType;
@@ -174,13 +228,22 @@ export async function createReview(data: {
   reviews.unshift(newReview);
   inMemoryReviews = reviews;
 
-  // Persist
-  saveToLocalFile(reviews);
-  await saveToExternalKV(reviews);
+  const redis = getRedisClient();
+  if (redis) {
+    try {
+      await redis.set(REDIS_KEY, reviews);
+    } catch (err) {
+      console.error('[DB] Failed to save created review to Upstash Redis:', err);
+      throw new Error('Nie udało się zapisać opinii w bazie danych.');
+    }
+  }
 
   return newReview;
 }
 
+/**
+ * Update an existing review by id and persist changes to Upstash Redis.
+ */
 export async function updateReview(
   id: string,
   data: Partial<Omit<Review, 'id'>>
@@ -201,12 +264,22 @@ export async function updateReview(
   reviews[index] = updated;
   inMemoryReviews = reviews;
 
-  saveToLocalFile(reviews);
-  await saveToExternalKV(reviews);
+  const redis = getRedisClient();
+  if (redis) {
+    try {
+      await redis.set(REDIS_KEY, reviews);
+    } catch (err) {
+      console.error('[DB] Failed to update review in Upstash Redis:', err);
+      throw new Error('Nie udało się zaktualizować opinii w bazie danych.');
+    }
+  }
 
   return updated;
 }
 
+/**
+ * Delete a review by id and persist change to Upstash Redis.
+ */
 export async function deleteReview(id: string): Promise<boolean> {
   const reviews = await getReviews(true);
   const filtered = reviews.filter((r) => r.id !== id);
@@ -215,12 +288,23 @@ export async function deleteReview(id: string): Promise<boolean> {
   }
 
   inMemoryReviews = filtered;
-  saveToLocalFile(filtered);
-  await saveToExternalKV(filtered);
+
+  const redis = getRedisClient();
+  if (redis) {
+    try {
+      await redis.set(REDIS_KEY, filtered);
+    } catch (err) {
+      console.error('[DB] Failed to delete review from Upstash Redis:', err);
+      throw new Error('Nie udało się usunąć opinii z bazy danych.');
+    }
+  }
 
   return true;
 }
 
+/**
+ * Calculate aggregated review stats for admin dashboard.
+ */
 export async function getReviewStats(): Promise<ReviewStats> {
   const reviews = await getReviews(true);
   const publishedReviews = reviews.filter((r) => r.published);

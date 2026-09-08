@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/reviews/:id",
+      "destination": "/api/reviews?id=:id"
+    }
+  ]
+}

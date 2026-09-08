@@ -9,14 +9,11 @@ export function verifyPassword(providedPassword: string): boolean {
   if (!providedPassword || typeof providedPassword !== 'string') {
     return false;
   }
-  
-  // Timing-safe comparison to prevent timing attacks
+
   const bufA = Buffer.from(providedPassword);
   const bufB = Buffer.from(ADMIN_PASSWORD);
 
   if (bufA.length !== bufB.length) {
-    // Perform dummy comparison to keep constant time
-    crypto.timingSafeEqual(bufA, bufA);
     return false;
   }
 
@@ -49,7 +46,9 @@ export function verifyAdminToken(authHeader: string | undefined): boolean {
   if (!token) return false;
 
   try {
-    const [payloadB64, signature] = token.split('.');
+    const parts = token.split('.');
+    if (parts.length !== 2) return false;
+    const [payloadB64, signature] = parts;
     if (!payloadB64 || !signature) return false;
 
     const expectedSig = crypto
@@ -57,7 +56,14 @@ export function verifyAdminToken(authHeader: string | undefined): boolean {
       .update(payloadB64)
       .digest('base64url');
 
-    if (signature !== expectedSig) {
+    const bufSig = Buffer.from(signature);
+    const bufExpected = Buffer.from(expectedSig);
+
+    if (bufSig.length !== bufExpected.length) {
+      return false;
+    }
+
+    if (!crypto.timingSafeEqual(bufSig, bufExpected)) {
       return false;
     }
 

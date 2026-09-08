@@ -116,15 +116,31 @@ export const ReviewsProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const loginAdmin = async (password: string): Promise<boolean> => {
     setAdminError(null);
     try {
-      const res = await fetch('/api/auth/login', {
+      let res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password }),
       });
 
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        setAdminError(data.error || 'Nieprawidłowy kod dostępu.');
+      // Fallback to /api/auth if /api/auth/login returns 404
+      if (res.status === 404) {
+        res = await fetch('/api/auth', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password }),
+        });
+      }
+
+      let data: any = null;
+      try {
+        data = await res.json();
+      } catch {
+        setAdminError('Nieprawidłowa odpowiedź serwera. Spróbuj ponownie.');
+        return false;
+      }
+
+      if (!res.ok || !data?.success) {
+        setAdminError(data?.error || 'Nieprawidłowy kod dostępu.');
         return false;
       }
 
@@ -151,7 +167,7 @@ export const ReviewsProvider: React.FC<{ children: React.ReactNode }> = ({ child
       });
       if (statsRes.ok) {
         const statsData = await statsRes.json();
-        if (statsData.stats) setAdminStats(statsData.stats);
+        if (statsData?.stats) setAdminStats(statsData.stats);
       }
 
       return true;
@@ -190,9 +206,13 @@ export const ReviewsProvider: React.FC<{ children: React.ReactNode }> = ({ child
         body: JSON.stringify(reviewData),
       });
 
-      const data = await res.json();
+      let data: any = {};
+      try {
+        data = await res.json();
+      } catch {}
+
       if (!res.ok || !data.success) {
-        return { success: false, message: data.error || 'Błąd podczas dodawania opinii.' };
+        return { success: false, message: data?.error || 'Błąd podczas dodawania opinii.' };
       }
 
       await fetchReviews();
@@ -210,18 +230,34 @@ export const ReviewsProvider: React.FC<{ children: React.ReactNode }> = ({ child
   ): Promise<{ success: boolean; message?: string }> => {
     if (!adminToken) return { success: false, message: 'Brak autoryzacji.' };
     try {
-      const res = await fetch(`/api/reviews/${id}`, {
+      let res = await fetch(`/api/reviews/${encodeURIComponent(id)}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${adminToken}`,
         },
-        body: JSON.stringify(reviewData),
+        body: JSON.stringify({ ...reviewData, id }),
       });
 
-      const data = await res.json();
+      // Fallback query parameter if path rewrite is not configured
+      if (res.status === 404) {
+        res = await fetch(`/api/reviews?id=${encodeURIComponent(id)}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${adminToken}`,
+          },
+          body: JSON.stringify({ ...reviewData, id }),
+        });
+      }
+
+      let data: any = {};
+      try {
+        data = await res.json();
+      } catch {}
+
       if (!res.ok || !data.success) {
-        return { success: false, message: data.error || 'Błąd podczas aktualizacji opinii.' };
+        return { success: false, message: data?.error || 'Błąd podczas aktualizacji opinii.' };
       }
 
       await fetchReviews();
@@ -244,16 +280,30 @@ export const ReviewsProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const deleteReviewAction = async (id: string): Promise<{ success: boolean; message?: string }> => {
     if (!adminToken) return { success: false, message: 'Brak autoryzacji.' };
     try {
-      const res = await fetch(`/api/reviews/${id}`, {
+      let res = await fetch(`/api/reviews/${encodeURIComponent(id)}`, {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${adminToken}`,
         },
       });
 
-      const data = await res.json();
+      // Fallback query parameter if path rewrite is not configured
+      if (res.status === 404) {
+        res = await fetch(`/api/reviews?id=${encodeURIComponent(id)}`, {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${adminToken}`,
+          },
+        });
+      }
+
+      let data: any = {};
+      try {
+        data = await res.json();
+      } catch {}
+
       if (!res.ok || !data.success) {
-        return { success: false, message: data.error || 'Błąd podczas usuwania opinii.' };
+        return { success: false, message: data?.error || 'Błąd podczas usuwania opinii.' };
       }
 
       await fetchReviews();
