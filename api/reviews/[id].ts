@@ -1,6 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'http';
-import { verifyAdminToken } from '../../server/auth';
-import { updateReview, deleteReview, ALLOWED_SERVICES, ServiceType } from '../../server/db';
+import { verifyAdminToken } from '../../server/auth.js';
+import { updateReview, deleteReview, ALLOWED_SERVICES } from '../../server/db.js';
+import type { ServiceType } from '../../server/db.js';
 
 interface VercelRequest extends IncomingMessage {
   body?: any;
@@ -114,11 +115,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         updateData.service = body.service as ServiceType;
       }
       if (body.rating !== undefined) {
-        updateData.rating = Math.min(5, Math.max(1, Math.round(Number(body.rating))));
+        const parsedRating = Number(body.rating);
+        if (!Number.isFinite(parsedRating) || parsedRating < 1 || parsedRating > 5) {
+          return sendResponse(res, 400, {
+            success: false,
+            error: 'Ocena musi wynosić od 1 do 5.',
+          });
+        }
+        updateData.rating = parsedRating;
       }
       if (body.text !== undefined) updateData.text = String(body.text).trim();
       if (body.date !== undefined) updateData.date = String(body.date).trim();
-      if (body.published !== undefined) updateData.published = Boolean(body.published);
+      if (body.published !== undefined) {
+        updateData.published =
+          body.published === true || body.published === 'true' || body.published === 1 || body.published === '1';
+      }
 
       const updated = await updateReview(id, updateData);
       if (!updated) {

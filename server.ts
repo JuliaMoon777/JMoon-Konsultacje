@@ -172,10 +172,20 @@ async function startServer() {
       const updateData: Partial<Omit<import('./server/db').Review, 'id'>> = {};
       if (typeof name === 'string' && name.trim() !== '') updateData.name = name.trim();
       if (service) updateData.service = service;
-      if (rating !== undefined) updateData.rating = Math.min(5, Math.max(1, Number(rating)));
+      if (rating !== undefined) {
+        const parsedRating = Number(rating);
+        if (!Number.isFinite(parsedRating) || parsedRating < 1 || parsedRating > 5) {
+          res.status(400).json({ success: false, error: 'Ocena musi wynosić od 1 do 5.' });
+          return;
+        }
+        updateData.rating = parsedRating;
+      }
       if (typeof text === 'string' && text.trim() !== '') updateData.text = text.trim();
       if (typeof date === 'string') updateData.date = date.trim();
-      if (published !== undefined) updateData.published = Boolean(published);
+      if (published !== undefined) {
+        updateData.published =
+          published === true || published === 'true' || published === 1 || published === '1';
+      }
 
       const updated = await updateReview(id, updateData);
       if (!updated) {

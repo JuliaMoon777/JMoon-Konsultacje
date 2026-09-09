@@ -1,6 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'http';
-import { verifyAdminToken } from '../../server/auth';
-import { getReviewStats } from '../../server/db';
+import { verifyAdminToken } from '../../server/auth.js';
+import { getReviewStats } from '../../server/db.js';
 
 interface VercelRequest extends IncomingMessage {}
 

@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'http';
-import { verifyPassword, generateAdminToken } from '../../server/auth';
+import { verifyPassword, generateAdminToken } from '../../server/auth.js';
 
 interface VercelRequest extends IncomingMessage {
   body?: any;
@@ -85,9 +85,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   }
 
-  const token = generateAdminToken();
-  return sendResponse(res, 200, {
-    success: true,
-    token,
-  });
+  try {
+    const token = generateAdminToken();
+    return sendResponse(res, 200, {
+      success: true,
+      token,
+    });
+  } catch (error) {
+    console.error('[AUTH API] Could not generate admin token:', error);
+    return sendResponse(res, 500, {
+      success: false,
+      error: 'Błąd konfiguracji autoryzacji.',
+    });
+  }
 }

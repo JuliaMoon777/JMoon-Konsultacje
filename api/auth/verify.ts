@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'http';
-import { verifyAdminToken } from '../../server/auth';
+import { verifyAdminToken } from '../../server/auth.js';
 
 export default async function handler(req: IncomingMessage, res: any) {
   const method = (req.method || 'GET').toUpperCase();
