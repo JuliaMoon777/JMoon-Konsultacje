@@ -11,7 +11,7 @@ export const MatrixSection: React.FC = () => {
   const { getReviewsByService } = useReviews();
 
   // Dynamic reviews for this specific service
-  const serviceReviews = getReviewsByService('EKSPRESOWA ANALIZA MATRYCY LOSU');
+  const serviceReviews = getReviewsByService('Konsultacja SOS: Rozwiązanie problemu przez Matrycę Losu');
   const reviews = serviceReviews.length > 0 ? serviceReviews : MATRIX_REVIEWS;
 
   const [isReviewsModalOpen, setIsReviewsModalOpen] = useState<boolean>(false);
@@ -136,17 +136,16 @@ export const MatrixSection: React.FC = () => {
         <div className="mt-8 sm:mt-10 flex flex-col items-start gap-3 sm:gap-4 overflow-visible w-full max-w-full">
           {/* [ PARTICLE HEADING ] */}
           <ParticleText
-            text="EKSPRESOWA ANALIZA MATRYCY LOSU"
-            lines={['EKSPRESOWA ANALIZA', 'MATRYCY LOSU']}
+            text="Konsultacja SOS: Rozwiązanie problemu przez Matrycę Losu"
             fontSize={52}
-            minFontSize={26}
+            minFontSize={22}
             fontWeight={600}
             letterSpacing={0.14}
             lineHeight={1.22}
             colorTheme="champagne"
             align="left"
             as="h2"
-            ariaLabel="EKSPRESOWA ANALIZA MATRYCY LOSU"
+            ariaLabel="Konsultacja SOS: Rozwiązanie problemu przez Matrycę Losu"
             onAssemblyComplete={() => {
               setTimeout(() => {
                 setPriceReady(true);
@@ -346,7 +345,7 @@ export const MatrixSection: React.FC = () => {
               </button>
 
               <h3 className="font-title text-xl text-[#F8F4F0] font-normal tracking-wide mb-4">
-                Opinie o usłudze Ekspresowa Analiza Matrycy Losu
+                Opinie o usłudze Konsultacja SOS: Rozwiązanie problemu przez Matrycę Losu
               </h3>
 
               {reviews.length === 0 ? (

@@ -64,7 +64,7 @@ const SERVICES: ServiceCardData[] = [
   {
     id: 'service-matryca-losu',
     targetId: 'matryca-losu',
-    title: 'EKSPRESOWA ANALIZA MATRYCY LOSU',
+    title: 'Konsultacja SOS: Rozwiązanie problemu przez Matrycę Losu',
     price: '250 zł',
     type: 'matrix',
     staggerIndex: 2,

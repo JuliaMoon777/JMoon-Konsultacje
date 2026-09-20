@@ -124,8 +124,8 @@ export const ReviewsProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
       // Try both /api/auth/login and /api/auth endpoints for cross-platform hosting (Vercel, Express, Cloud Run)
       const endpoints = ['/api/auth/login', '/api/auth'];
-      let lastErrorMessage = 'Nieprawidłowy kod dostępu.';
-      let succeeded = false;
+      let serverErrorMessage: string | null = null;
+      let passwordErrorMessage: string | null = null;
 
       for (const endpoint of endpoints) {
         try {
@@ -145,7 +145,8 @@ export const ReviewsProvider: React.FC<{ children: React.ReactNode }> = ({ child
           try {
             data = JSON.parse(rawText);
           } catch {
-            // Non-JSON response (e.g. server HTML error) -> try next endpoint
+            // Non-JSON response (e.g. server HTML 500 error)
+            serverErrorMessage = 'Błąd serwera. Spróbuj ponownie.';
             continue;
           }
 
@@ -184,14 +185,15 @@ export const ReviewsProvider: React.FC<{ children: React.ReactNode }> = ({ child
               console.error('[Admin] Error fetching stats:', e);
             }
 
-            succeeded = true;
             return true;
           } else {
             // Server explicitly returned an error message in JSON
-            lastErrorMessage = data?.error || 'Nieprawidłowy kod dostępu.';
             if (res.status === 401 || res.status === 400) {
-              setAdminError(lastErrorMessage);
+              passwordErrorMessage = data?.error || 'Nieprawidłowy kod dostępu.';
+              setAdminError(passwordErrorMessage);
               return false;
+            } else {
+              serverErrorMessage = data?.error || 'Błąd serwera. Spróbuj ponownie.';
             }
           }
         } catch (fetchErr) {
@@ -199,12 +201,16 @@ export const ReviewsProvider: React.FC<{ children: React.ReactNode }> = ({ child
         }
       }
 
-      if (!succeeded) {
-        setAdminError(lastErrorMessage);
-        return false;
+      // If we got here, neither endpoint succeeded
+      if (passwordErrorMessage) {
+        setAdminError(passwordErrorMessage);
+      } else if (serverErrorMessage) {
+        setAdminError(serverErrorMessage);
+      } else {
+        setAdminError('Błąd połączenia z serwerem. Spróbuj ponownie.');
       }
 
-      return true;
+      return false;
     } catch (err) {
       console.error('[Admin] Login error:', err);
       setAdminError('Błąd połączenia z serwerem. Spróbuj ponownie.');
@@ -355,6 +361,16 @@ export const ReviewsProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const getReviewsByService = useCallback(
     (service: ServiceType) => {
+      if (
+        service === 'Konsultacja SOS: Rozwiązanie problemu przez Matrycę Losu' ||
+        service === 'EKSPRESOWA ANALIZA MATRYCY LOSU'
+      ) {
+        return reviews.filter(
+          (r) =>
+            r.service === 'Konsultacja SOS: Rozwiązanie problemu przez Matrycę Losu' ||
+            r.service === 'EKSPRESOWA ANALIZA MATRYCY LOSU'
+        );
+      }
       return reviews.filter((r) => r.service === service);
     },
     [reviews]

@@ -156,7 +156,9 @@ export const OpinieSection: React.FC = () => {
                   {/* Card Footer: Service Name & Rating Fraction */}
                   <div className="mt-8 sm:mt-10 pt-6 sm:pt-7 border-t border-[#E6B491]/10 flex flex-wrap items-center justify-between gap-3 text-xs sm:text-[13px]">
                     <span className="font-title uppercase tracking-[0.16em] text-[#E8B58E] font-medium">
-                      {rev.service}
+                      {rev.service === 'EKSPRESOWA ANALIZA MATRYCY LOSU'
+                        ? 'Konsultacja SOS: Rozwiązanie problemu przez Matrycę Losu'
+                        : rev.service}
                     </span>
                     <span className="font-title tracking-wider text-[#CFBFB6]/80 font-normal">
                       {rev.rating}/5

@@ -8,7 +8,7 @@ export const MATRIX_REVIEWS: Review[] = [
     name: 'Agnieszka',
     author: 'Agnieszka',
     rating: 5,
-    service: 'EKSPRESOWA ANALIZA MATRYCY LOSU',
+    service: 'Konsultacja SOS: Rozwiązanie problemu przez Matrycę Losu',
     text: `„Julio, dziękuję Ci za poświęcony czas i za odpowiedzi na moje pytania. Cieszę się, że mogłam chwilę z Tobą porozmawiać.
 
 Imponuje mi Twoja intuicja i wiedza na temat liczb i wyczucie. Dziękuję za to, co robisz.

@@ -32,7 +32,7 @@ export const App: React.FC = () => {
           {/* Section 04: Indywidualna Prognoza Miesiąca — 170 zł Editorial Section */}
           <ForecastSection />
 
-          {/* Section 05: Ekspresowa Analiza Matrycy Losu — 250 zł Editorial Section */}
+          {/* Section 05: Konsultacja SOS: Rozwiązanie problemu przez Matrycę Losu — 250 zł Editorial Section */}
           <MatrixSection />
 
           {/* Section 06: Opinie Klientów */}

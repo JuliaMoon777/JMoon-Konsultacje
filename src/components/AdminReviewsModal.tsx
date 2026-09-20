@@ -7,7 +7,7 @@ import { Review, ServiceType } from '../types';
 const SERVICES: ServiceType[] = [
   'KODY CIAŁA',
   'Indywidualna prognoza miesiąca',
-  'EKSPRESOWA ANALIZA MATRYCY LOSU',
+  'Konsultacja SOS: Rozwiązanie problemu przez Matrycę Losu',
 ];
 
 interface AdminReviewsModalProps {
@@ -46,7 +46,7 @@ export const AdminReviewsModal: React.FC<AdminReviewsModalProps> = ({ isOpen, on
     published: boolean;
   }>({
     name: '',
-    service: 'EKSPRESOWA ANALIZA MATRYCY LOSU',
+    service: 'Konsultacja SOS: Rozwiązanie problemu przez Matrycę Losu',
     rating: 5,
     text: '',
     published: true,
@@ -79,7 +79,7 @@ export const AdminReviewsModal: React.FC<AdminReviewsModalProps> = ({ isOpen, on
   const handleOpenCreate = () => {
     setFormData({
       name: '',
-      service: 'EKSPRESOWA ANALIZA MATRYCY LOSU',
+      service: 'Konsultacja SOS: Rozwiązanie problemu przez Matrycę Losu',
       rating: 5,
       text: '',
       published: true,
@@ -90,10 +90,15 @@ export const AdminReviewsModal: React.FC<AdminReviewsModalProps> = ({ isOpen, on
 
   // Open Edit Form
   const handleOpenEdit = (review: Review) => {
+    const serviceValue =
+      review.service === 'EKSPRESOWA ANALIZA MATRYCY LOSU'
+        ? ('Konsultacja SOS: Rozwiązanie problemu przez Matrycę Losu' as ServiceType)
+        : review.service;
+
     setEditingReview(review);
     setFormData({
       name: review.name || review.author || '',
-      service: review.service,
+      service: serviceValue,
       rating: review.rating,
       text: review.text,
       published: review.published,
@@ -465,7 +470,9 @@ export const AdminReviewsModal: React.FC<AdminReviewsModalProps> = ({ isOpen, on
                           {/* Service Tag & Date */}
                           <div className="flex flex-wrap items-center gap-3 text-xs text-[#CFBFB6]/70">
                             <span className="font-title uppercase tracking-wider text-[#E8B58E]/90">
-                              {rev.service}
+                              {rev.service === 'EKSPRESOWA ANALIZA MATRYCY LOSU'
+                                ? 'Konsultacja SOS: Rozwiązanie problemu przez Matrycę Losu'
+                                : rev.service}
                             </span>
                             <span>•</span>
                             <span>{rev.date}</span>
@@ -746,7 +753,11 @@ export const AdminReviewsModal: React.FC<AdminReviewsModalProps> = ({ isOpen, on
 
               <div className="p-3 rounded-lg bg-white/[0.02] border border-[#E6B491]/10 text-xs font-body text-[#CFBFB6]/80">
                 <span className="font-semibold text-[#F8F4F0]">{reviewToDelete.name}</span> •{' '}
-                <span>{reviewToDelete.service}</span>
+                <span>
+                  {reviewToDelete.service === 'EKSPRESOWA ANALIZA MATRYCY LOSU'
+                    ? 'Konsultacja SOS: Rozwiązanie problemu przez Matrycę Losu'
+                    : reviewToDelete.service}
+                </span>
               </div>
 
               <div className="flex items-center justify-end gap-2.5 pt-2">

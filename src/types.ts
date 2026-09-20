@@ -50,6 +50,7 @@ export interface MatrixNode {
 export type ServiceType =
   | 'KODY CIAŁA'
   | 'Indywidualna prognoza miesiąca'
+  | 'Konsultacja SOS: Rozwiązanie problemu przez Matrycę Losu'
   | 'EKSPRESOWA ANALIZA MATRYCY LOSU';
 
 export interface Review {
