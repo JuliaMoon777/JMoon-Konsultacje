@@ -26,10 +26,10 @@ export const App: React.FC = () => {
           {/* Section 02: Service Cards Section */}
           <ServiceCards />
 
-          {/* Section 03: Kody Ciała — 130 zł Editorial Section */}
+          {/* Section 03: Kody Ciała — 180 zł Editorial Section */}
           <RoutineSection />
 
-          {/* Section 04: Indywidualna Prognoza Miesiąca — 170 zł Editorial Section */}
+          {/* Section 04: Indywidualna Prognoza Miesiąca — 220 zł Editorial Section */}
           <ForecastSection />
 
           {/* Section 05: Konsultacja SOS: Rozwiązanie problemu przez Matrycę Losu — 250 zł Editorial Section */}
