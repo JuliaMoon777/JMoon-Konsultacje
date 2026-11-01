@@ -169,7 +169,7 @@ export const RoutineSection: React.FC = () => {
             aria-label="Cena: 210 zł"
           >
             <ParticleText
-              text="180 zł"
+              text="210 zł"
               fontSize={33}
               minFontSize={24}
               fontWeight={600}
@@ -177,7 +177,7 @@ export const RoutineSection: React.FC = () => {
               colorTheme="champagne"
               align="left"
               as="div"
-              ariaLabel="Cena: 180 zł"
+              ariaLabel="Cena: 210 zł"
               variant="price"
               isPrice={true}
               revealMode="dormant"
