@@ -166,7 +166,7 @@ export const RoutineSection: React.FC = () => {
           <div
             id="routine-price-tag"
             className="flex items-baseline overflow-visible"
-            aria-label="Cena: 180 zł"
+            aria-label="Cena: 210 zł"
           >
             <ParticleText
               text="180 zł"
