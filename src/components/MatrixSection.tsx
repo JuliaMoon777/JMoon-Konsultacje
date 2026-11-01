@@ -157,10 +157,10 @@ export const MatrixSection: React.FC = () => {
           <div
             id="matrix-price-tag"
             className="flex items-baseline overflow-visible"
-            aria-label="Cena: 250 zł"
+            aria-label="Cena: 290 zł"
           >
             <ParticleText
-              text="250 zł"
+              text="290 zł"
               fontSize={33}
               minFontSize={24}
               fontWeight={600}
@@ -168,7 +168,7 @@ export const MatrixSection: React.FC = () => {
               colorTheme="champagne"
               align="left"
               as="div"
-              ariaLabel="Cena: 250 zł"
+              ariaLabel="Cena: 290 zł"
               variant="price"
               isPrice={true}
               revealMode="dormant"
