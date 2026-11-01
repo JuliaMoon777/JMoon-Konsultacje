@@ -173,10 +173,10 @@ export const ForecastSection: React.FC = () => {
           <div
             id="forecast-price-tag"
             className="flex items-baseline overflow-visible"
-            aria-label="Cena: 220 zł"
+            aria-label="Cena: 260 zł"
           >
             <ParticleText
-              text="220 zł"
+              text="260 zł"
               fontSize={33}
               minFontSize={24}
               fontWeight={600}
@@ -184,7 +184,7 @@ export const ForecastSection: React.FC = () => {
               colorTheme="champagne"
               align="left"
               as="div"
-              ariaLabel="Cena: 220 zł"
+              ariaLabel="Cena: 260 zł"
               variant="price"
               isPrice={true}
               revealMode="dormant"
